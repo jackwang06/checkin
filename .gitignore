@@ -1,0 +1,12 @@
+# SQLite 数据库及 WAL 辅助文件（数据可由 schema+csv+seed 脚本确定性重建）
+data/*.db
+data/*.db-wal
+data/*.db-shm
+
+# 导出产物（可随时重新生成）
+exports/
+
+# Python
+__pycache__/
+*.pyc
+.venv/

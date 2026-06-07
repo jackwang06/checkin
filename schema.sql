@@ -1,0 +1,248 @@
+-- ============================================================
+-- 晚点名考勤数据库 schema（真相来源）
+-- 层级：周(时间轴) → 年级 → 专业 → 班级 → 学号 → 日考勤
+-- 日考勤覆盖 周一~周五 + 周日（无周六），每日状态有且仅有 5 种：
+--   无异常（默认）/ 公假 / 事假 / 旷到 / 失联
+-- 注意：foreign_keys 是连接级 PRAGMA，每个连接都必须重新开启！
+--       （scripts/ 下所有脚本均已强制 PRAGMA foreign_keys=ON）
+-- ============================================================
+
+PRAGMA journal_mode = WAL;
+PRAGMA foreign_keys = ON;
+
+-- ------------------------------------------------------------
+-- 状态字典：attendance.status 外键到这里，防 typo
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS status_def (
+    code       TEXT PRIMARY KEY,                 -- 无异常/公假/事假/旷到/失联
+    label      TEXT NOT NULL,
+    is_present INTEGER NOT NULL DEFAULT 0 CHECK (is_present IN (0, 1)),  -- 计为出勤
+    is_excused INTEGER NOT NULL DEFAULT 0 CHECK (is_excused IN (0, 1)),  -- 合规请假
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    active     INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0, 1))
+) STRICT;
+
+-- ------------------------------------------------------------
+-- 年级：支持毕业归档（status='archived'）与新年级加入
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS grade (
+    id          INTEGER PRIMARY KEY,
+    name        TEXT NOT NULL UNIQUE,            -- 两位年级码：'23'/'24'/'25'
+    enroll_year INTEGER NOT NULL,                -- 2023/2024/2025
+    status      TEXT NOT NULL DEFAULT 'active'
+                CHECK (status IN ('active', 'archived')),
+    archived_at TEXT                             -- 归档日期 ISO
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS major (
+    id   INTEGER PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE                    -- 电信/计算机/通信/网安/信息安全
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS class (
+    id        INTEGER PRIMARY KEY,
+    grade_id  INTEGER NOT NULL REFERENCES grade (id),
+    major_id  INTEGER NOT NULL REFERENCES major (id),
+    class_no  INTEGER NOT NULL,                  -- 班号 1/2/3
+    tag       TEXT,                              -- '卓越班'/'实验班'/NULL
+    full_name TEXT NOT NULL UNIQUE,              -- 原始班级名，导入幂等锚点
+    UNIQUE (grade_id, major_id, class_no)
+) STRICT;
+
+-- ------------------------------------------------------------
+-- 学生：学号为主键（TEXT 防前导零/精度问题）
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS student (
+    id          TEXT PRIMARY KEY,                -- 学号，不可变更
+    name        TEXT NOT NULL,
+    class_id    INTEGER NOT NULL REFERENCES class (id),
+    status      TEXT NOT NULL DEFAULT 'active'
+                CHECK (status IN ('active', 'suspended', 'withdrawn',
+                                  'transferred', 'graduated')),
+    enrolled_at TEXT,                            -- 建档日期
+    left_at     TEXT                             -- 离校日期（休/退/转/毕业）
+) STRICT;
+
+-- 转班/转专业历史（首版统计按当前归属，需要精确口径时再切到本表）
+CREATE TABLE IF NOT EXISTS student_class_history (
+    id         INTEGER PRIMARY KEY,
+    student_id TEXT    NOT NULL REFERENCES student (id),
+    class_id   INTEGER NOT NULL REFERENCES class (id),
+    from_date  TEXT NOT NULL,
+    to_date    TEXT                              -- NULL = 至今
+) STRICT;
+
+-- ------------------------------------------------------------
+-- 时间轴（最外层维度）：第 xx 周
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS week (
+    id         INTEGER PRIMARY KEY,
+    term       TEXT NOT NULL,                    -- 学期：'2025-2026-1'
+    week_no    INTEGER NOT NULL,                 -- 学期内第几周
+    start_date TEXT NOT NULL CHECK (start_date LIKE '____-__-__'),  -- 周一
+    end_date   TEXT NOT NULL CHECK (end_date   LIKE '____-__-__'),  -- 周日
+    UNIQUE (term, week_no),
+    UNIQUE (start_date)
+) STRICT;
+
+-- ------------------------------------------------------------
+-- 事实表：每生每天一行（全量存储），复合主键 (学号, 日期)
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS attendance (
+    student_id  TEXT    NOT NULL REFERENCES student (id),
+    date        TEXT    NOT NULL CHECK (date LIKE '____-__-__'),
+    week_id     INTEGER NOT NULL REFERENCES week (id),
+    status      TEXT    NOT NULL DEFAULT '无异常' REFERENCES status_def (code),
+    reason      TEXT,                            -- 备注（请假事由等）
+    return_date TEXT,                            -- 请假返校时间
+    updated_at  TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+    PRIMARY KEY (student_id, date)
+) STRICT, WITHOUT ROWID;
+
+-- ------------------------------------------------------------
+-- 索引
+-- ------------------------------------------------------------
+CREATE INDEX IF NOT EXISTS idx_att_date      ON attendance (date);
+CREATE INDEX IF NOT EXISTS idx_att_week      ON attendance (week_id);
+-- 部分索引：异常记录稀疏（95%+ 为无异常），查缺勤极快且体积小
+CREATE INDEX IF NOT EXISTS idx_att_abnormal  ON attendance (status)
+    WHERE status <> '无异常';
+CREATE INDEX IF NOT EXISTS idx_student_class ON student (class_id);
+CREATE INDEX IF NOT EXISTS idx_class_grade   ON class (grade_id);
+CREATE INDEX IF NOT EXISTS idx_class_major   ON class (major_id);
+
+-- ============================================================
+-- 视图（按时间轴最外层组织）
+-- ============================================================
+
+-- 底层长表：attendance 挂全维度，各级统计共用
+CREATE VIEW IF NOT EXISTS v_att_enriched AS
+SELECT
+    w.term,
+    w.week_no,
+    a.week_id,
+    a.date,
+    g.name      AS grade,
+    g.status    AS grade_status,
+    m.name      AS major,
+    c.id        AS class_id,
+    c.full_name AS class_name,
+    s.id        AS student_id,
+    s.name      AS student_name,
+    s.status    AS student_status,
+    a.status,
+    a.reason,
+    a.return_date,
+    sd.is_present,
+    sd.is_excused
+FROM attendance a
+JOIN student    s  ON s.id = a.student_id
+JOIN class      c  ON c.id = s.class_id
+JOIN grade      g  ON g.id = c.grade_id
+JOIN major      m  ON m.id = c.major_id
+JOIN week       w  ON w.id = a.week_id
+JOIN status_def sd ON sd.code = a.status;
+
+-- 班级×周 二维表：行=学号/姓名，列=周一..周五、周日（无周六）
+-- 用法：SELECT * FROM v_week_grid
+--       WHERE class_name='电信24-2' AND term='2025-2026-1' AND week_no=1;
+CREATE VIEW IF NOT EXISTS v_week_grid AS
+SELECT
+    term,
+    week_no,
+    grade,
+    major,
+    class_name,
+    student_id,
+    student_name,
+    MAX(CASE WHEN strftime('%w', date) = '1' THEN status END) AS 周一,
+    MAX(CASE WHEN strftime('%w', date) = '2' THEN status END) AS 周二,
+    MAX(CASE WHEN strftime('%w', date) = '3' THEN status END) AS 周三,
+    MAX(CASE WHEN strftime('%w', date) = '4' THEN status END) AS 周四,
+    MAX(CASE WHEN strftime('%w', date) = '5' THEN status END) AS 周五,
+    MAX(CASE WHEN strftime('%w', date) = '0' THEN status END) AS 周日
+FROM v_att_enriched
+GROUP BY week_id, student_id;
+
+-- ------------------------------------------------------------
+-- 分级统计（按 周 → 年级 → 专业 → 班级 逐级下钻）
+-- 口径：仅统计在读学生 + 未归档年级；归档后历史行保留但退出统计
+-- ------------------------------------------------------------
+CREATE VIEW IF NOT EXISTS v_stats_class AS
+SELECT
+    term, week_no, grade, major, class_name,
+    COUNT(*)                                              AS 应到人次,
+    SUM(is_present)                                       AS 无异常,
+    SUM(CASE WHEN status = '公假' THEN 1 ELSE 0 END)      AS 公假,
+    SUM(CASE WHEN status = '事假' THEN 1 ELSE 0 END)      AS 事假,
+    SUM(CASE WHEN status = '旷到' THEN 1 ELSE 0 END)      AS 旷到,
+    SUM(CASE WHEN status = '失联' THEN 1 ELSE 0 END)      AS 失联,
+    ROUND(100.0 * SUM(is_present) / COUNT(*), 2)          AS 出勤率
+FROM v_att_enriched
+WHERE grade_status = 'active' AND student_status = 'active'
+GROUP BY week_id, class_id;
+
+CREATE VIEW IF NOT EXISTS v_stats_major AS
+SELECT
+    term, week_no, grade, major,
+    COUNT(*)                                              AS 应到人次,
+    SUM(is_present)                                       AS 无异常,
+    SUM(CASE WHEN status = '公假' THEN 1 ELSE 0 END)      AS 公假,
+    SUM(CASE WHEN status = '事假' THEN 1 ELSE 0 END)      AS 事假,
+    SUM(CASE WHEN status = '旷到' THEN 1 ELSE 0 END)      AS 旷到,
+    SUM(CASE WHEN status = '失联' THEN 1 ELSE 0 END)      AS 失联,
+    ROUND(100.0 * SUM(is_present) / COUNT(*), 2)          AS 出勤率
+FROM v_att_enriched
+WHERE grade_status = 'active' AND student_status = 'active'
+GROUP BY week_id, grade, major;
+
+CREATE VIEW IF NOT EXISTS v_stats_grade AS
+SELECT
+    term, week_no, grade,
+    COUNT(*)                                              AS 应到人次,
+    SUM(is_present)                                       AS 无异常,
+    SUM(CASE WHEN status = '公假' THEN 1 ELSE 0 END)      AS 公假,
+    SUM(CASE WHEN status = '事假' THEN 1 ELSE 0 END)      AS 事假,
+    SUM(CASE WHEN status = '旷到' THEN 1 ELSE 0 END)      AS 旷到,
+    SUM(CASE WHEN status = '失联' THEN 1 ELSE 0 END)      AS 失联,
+    ROUND(100.0 * SUM(is_present) / COUNT(*), 2)          AS 出勤率
+FROM v_att_enriched
+WHERE grade_status = 'active' AND student_status = 'active'
+GROUP BY week_id, grade;
+
+CREATE VIEW IF NOT EXISTS v_stats_overall AS
+SELECT
+    term, week_no,
+    COUNT(*)                                              AS 应到人次,
+    SUM(is_present)                                       AS 无异常,
+    SUM(CASE WHEN status = '公假' THEN 1 ELSE 0 END)      AS 公假,
+    SUM(CASE WHEN status = '事假' THEN 1 ELSE 0 END)      AS 事假,
+    SUM(CASE WHEN status = '旷到' THEN 1 ELSE 0 END)      AS 旷到,
+    SUM(CASE WHEN status = '失联' THEN 1 ELSE 0 END)      AS 失联,
+    ROUND(100.0 * SUM(is_present) / COUNT(*), 2)          AS 出勤率
+FROM v_att_enriched
+WHERE grade_status = 'active' AND student_status = 'active'
+GROUP BY week_id;
+
+-- ------------------------------------------------------------
+-- 自检视图：期望均为 0 行（提交前跑一遍）
+-- ------------------------------------------------------------
+-- 状态值不在字典内（FK 关闭时写入的脏数据）
+CREATE VIEW IF NOT EXISTS v_check_unknown_status AS
+SELECT a.student_id, a.date, a.status
+FROM attendance a
+LEFT JOIN status_def sd ON sd.code = a.status
+WHERE sd.code IS NULL;
+
+-- 考勤日期落在周六（不应存在）
+CREATE VIEW IF NOT EXISTS v_check_saturday AS
+SELECT student_id, date, status
+FROM attendance
+WHERE strftime('%w', date) = '6';
+
+-- 考勤日期不在所属周范围内
+CREATE VIEW IF NOT EXISTS v_check_date_outside_week AS
+SELECT a.student_id, a.date, w.term, w.week_no, w.start_date, w.end_date
+FROM attendance a
+JOIN week w ON w.id = a.week_id
+WHERE a.date < w.start_date OR a.date > w.end_date;
