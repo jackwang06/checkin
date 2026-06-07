@@ -1,0 +1,14 @@
+[Unit]
+Description=checkin backend (FastAPI uvicorn)
+After=network.target
+
+[Service]
+User=winbeau
+WorkingDirectory=/home/winbeau/projects/checkin
+EnvironmentFile=/home/winbeau/projects/checkin/backend/.env
+ExecStart=/home/winbeau/.local/bin/uv run uvicorn app.main:app --app-dir backend --host 127.0.0.1 --port 8002
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

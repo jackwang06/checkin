@@ -1,0 +1,25 @@
+# checkin.selab.top — Cloudflare Tunnel 专用后端（仿 aurash-tunnel 模式）。
+# 仅绑回环：无公网暴露；server_name _ 接住隧道送来的任意 Host。
+server {
+    listen 127.0.0.1:8481;
+    server_name _;
+    client_max_body_size 20m;          # 假条附件/名单 xlsx 上传余量
+
+    root /home/winbeau/projects/checkin/frontend/dist;
+    index index.html;
+
+    location /api {
+        proxy_pass http://127.0.0.1:8002;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+
+    # 假条附件不直接静态托管——必须带 token 经 /api 鉴权获取
+
+    location / {
+        try_files $uri /index.html;    # SPA 路由
+    }
+}

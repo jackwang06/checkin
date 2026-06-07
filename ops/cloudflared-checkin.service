@@ -1,0 +1,16 @@
+[Unit]
+Description=cloudflared tunnel (checkin.selab.top)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=notify
+# token 模式：ingress 在 Cloudflare 仪表盘配置（checkin.selab.top -> http://localhost:8481）
+# __CF_TOKEN__ 由 ops/install_root.sh 安装时替换，真 token 不进 git
+ExecStart=/usr/local/bin/cloudflared --no-autoupdate tunnel run --token __CF_TOKEN__
+Restart=on-failure
+RestartSec=5
+RuntimeDirectory=cloudflared-checkin
+
+[Install]
+WantedBy=multi-user.target
