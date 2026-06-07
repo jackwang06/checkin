@@ -1,0 +1,31 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e6]
+        - text: 晚点名
+      - generic [ref=e9]:
+        - heading "每晚一次点名， 出勤一目了然。" [level=1] [ref=e10]:
+          - text: 每晚一次点名，
+          - text: 出勤一目了然。
+        - paragraph [ref=e11]: 周一至周四与周日的晚点名记录、假条申请与审批、 多级出勤统计——全部在线完成，全程留痕。
+      - generic [ref=e12]:
+        - generic [ref=e13]: 无异常
+        - generic [ref=e14]: 公假
+        - generic [ref=e15]: 事假
+        - generic [ref=e16]: 旷到
+        - generic [ref=e17]: 失联
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - heading "登录" [level=2] [ref=e21]
+        - paragraph [ref=e22]: 学生使用学号登录，初始密码为学号
+      - generic [ref=e23]:
+        - text: 学号 / 账号
+        - textbox "学号 / 账号" [active] [ref=e24]:
+          - /placeholder: 如 20231303001
+      - generic [ref=e25]:
+        - text: 密码
+        - textbox "密码" [ref=e26]
+      - button "登录" [disabled]
+      - paragraph [ref=e27]: 忘记密码请联系学院管理员重置。
+  - region "Notifications alt+T"

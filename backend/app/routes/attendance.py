@@ -22,8 +22,9 @@ def patch_cell(body: AttendancePatch, request: Request,
                         body.reason, body.return_date)
         audit.log(conn, user["id"], "attendance.update",
                   f"{body.student_id}:{body.date}",
-                  {"from": r["old"], "to": r["new"], "reason": body.reason,
-                   "returnDate": body.return_date},
+                  {"studentName": r["studentName"], "className": r["className"],
+                   "date": body.date, "from": r["old"], "to": r["new"],
+                   "reason": body.reason, "returnDate": body.return_date},
                   client_ip(request))
     return {"studentId": body.student_id, "date": body.date,
             "old": r["old"], "status": r["new"]}
@@ -41,7 +42,9 @@ def patch_batch(body: AttendanceBatch, request: Request,
                             item.reason, item.return_date)
             audit.log(conn, user["id"], "attendance.update",
                       f"{item.student_id}:{item.date}",
-                      {"from": r["old"], "to": r["new"], "batch": True}, ip)
+                      {"studentName": r["studentName"], "className": r["className"],
+                       "date": item.date, "from": r["old"], "to": r["new"],
+                       "reason": item.reason, "batch": True}, ip)
             results.append({"studentId": item.student_id, "date": item.date,
                             "old": r["old"], "status": r["new"]})
     return {"updated": len(results), "items": results}

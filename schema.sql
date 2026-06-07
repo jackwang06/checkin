@@ -1,8 +1,9 @@
 -- ============================================================
 -- 晚点名考勤数据库 schema（真相来源）
 -- 层级：周(时间轴) → 年级 → 专业 → 班级 → 学号 → 日考勤
--- 日考勤覆盖 周一~周四 + 周日（周五、周六不点名），每日状态有且仅有 5 种：
---   无异常（默认）/ 公假 / 事假 / 旷到 / 失联
+-- 日考勤覆盖 周一~周四 + 周日（周五、周六默认不点名，可由 special_date 调整）。
+-- 人工状态 5 种：无异常（默认）/ 公假 / 事假 / 旷到 / 失联；
+-- 系统状态 1 种：节假日（special_date 宣布假日时打，人工不可选，统计剔除）。
 -- 注意：foreign_keys 是连接级 PRAGMA，每个连接都必须重新开启！
 --       （scripts/ 下所有脚本均已强制 PRAGMA foreign_keys=ON）
 -- ============================================================
@@ -70,6 +71,18 @@ CREATE TABLE IF NOT EXISTS student_class_history (
     class_id   INTEGER NOT NULL REFERENCES class (id),
     from_date  TEXT NOT NULL,
     to_date    TEXT                              -- NULL = 至今
+) STRICT;
+
+-- ------------------------------------------------------------
+-- 特殊日期：法定假日（停点）/ 调休补课日（加点）
+--   holiday 只能落在基础点名日（周一~四/日）；makeup 只能落在周五/周六
+--   某日是否点名 = (星期∈{一二三四日} AND 非holiday) OR makeup
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS special_date (
+    date       TEXT PRIMARY KEY CHECK (date LIKE '____-__-__'),
+    kind       TEXT NOT NULL CHECK (kind IN ('holiday', 'makeup')),
+    note       TEXT,                            -- '端午节' / '五一调休补课'
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
 ) STRICT;
 
 -- ------------------------------------------------------------
@@ -145,7 +158,8 @@ JOIN major      m  ON m.id = c.major_id
 JOIN week       w  ON w.id = a.week_id
 JOIN status_def sd ON sd.code = a.status;
 
--- 班级×周 二维表：行=学号/姓名，列=周一..周四、周日（周五/周六不点名）
+-- 班级×周 二维表：行=学号/姓名，列=周一..周四、周日（默认）
+-- 周五/周六平时为 NULL，仅补课日有值；节假日列显示「节假日」。前端按列有无数据动态显隐。
 -- 用法：SELECT * FROM v_week_grid
 --       WHERE class_name='电信24-2' AND term='2025-2026-1' AND week_no=1;
 DROP VIEW IF EXISTS v_week_grid;
@@ -162,6 +176,8 @@ SELECT
     MAX(CASE WHEN strftime('%w', date) = '2' THEN status END) AS 周二,
     MAX(CASE WHEN strftime('%w', date) = '3' THEN status END) AS 周三,
     MAX(CASE WHEN strftime('%w', date) = '4' THEN status END) AS 周四,
+    MAX(CASE WHEN strftime('%w', date) = '5' THEN status END) AS 周五,
+    MAX(CASE WHEN strftime('%w', date) = '6' THEN status END) AS 周六,
     MAX(CASE WHEN strftime('%w', date) = '0' THEN status END) AS 周日
 FROM v_att_enriched
 GROUP BY week_id, student_id;
@@ -183,6 +199,7 @@ SELECT
     ROUND(100.0 * SUM(is_present) / COUNT(*), 2)          AS 出勤率
 FROM v_att_enriched
 WHERE grade_status = 'active' AND student_status = 'active'
+  AND status <> '节假日'
 GROUP BY week_id, class_id;
 
 DROP VIEW IF EXISTS v_stats_major;
@@ -198,6 +215,7 @@ SELECT
     ROUND(100.0 * SUM(is_present) / COUNT(*), 2)          AS 出勤率
 FROM v_att_enriched
 WHERE grade_status = 'active' AND student_status = 'active'
+  AND status <> '节假日'
 GROUP BY week_id, grade, major;
 
 DROP VIEW IF EXISTS v_stats_grade;
@@ -213,6 +231,7 @@ SELECT
     ROUND(100.0 * SUM(is_present) / COUNT(*), 2)          AS 出勤率
 FROM v_att_enriched
 WHERE grade_status = 'active' AND student_status = 'active'
+  AND status <> '节假日'
 GROUP BY week_id, grade;
 
 DROP VIEW IF EXISTS v_stats_overall;
@@ -228,6 +247,7 @@ SELECT
     ROUND(100.0 * SUM(is_present) / COUNT(*), 2)          AS 出勤率
 FROM v_att_enriched
 WHERE grade_status = 'active' AND student_status = 'active'
+  AND status <> '节假日'
 GROUP BY week_id;
 
 -- ============================================================
@@ -309,13 +329,19 @@ FROM attendance a
 LEFT JOIN status_def sd ON sd.code = a.status
 WHERE sd.code IS NULL;
 
--- 考勤日期落在非点名日：周五('5')/周六('6')（不应存在）
+-- 考勤行落在非点名日：周五/六且非补课日 → 违规；或假日行状态≠节假日 → 违规
 DROP VIEW IF EXISTS v_check_saturday;
 DROP VIEW IF EXISTS v_check_non_rollcall;
 CREATE VIEW v_check_non_rollcall AS
-SELECT student_id, date, status
-FROM attendance
-WHERE strftime('%w', date) IN ('5', '6');
+SELECT a.student_id, a.date, a.status, 'fri_sat_no_makeup' AS reason
+FROM attendance a
+LEFT JOIN special_date sd ON sd.date = a.date AND sd.kind = 'makeup'
+WHERE strftime('%w', a.date) IN ('5', '6') AND sd.date IS NULL
+UNION ALL
+SELECT a.student_id, a.date, a.status, 'holiday_not_marked' AS reason
+FROM attendance a
+JOIN special_date sd ON sd.date = a.date AND sd.kind = 'holiday'
+WHERE a.status <> '节假日';
 
 -- 考勤日期不在所属周范围内
 DROP VIEW IF EXISTS v_check_date_outside_week;

@@ -21,6 +21,7 @@ export function AdminPage() {
       <Tabs defaultValue="weeks">
         <TabsList className="flex-wrap">
           <TabsTrigger value="weeks">开周</TabsTrigger>
+          <TabsTrigger value="special">特殊日期</TabsTrigger>
           <TabsTrigger value="export">导出</TabsTrigger>
           <TabsTrigger value="transfer">学籍变动</TabsTrigger>
           <TabsTrigger value="grades">年级</TabsTrigger>
@@ -28,6 +29,7 @@ export function AdminPage() {
           {role === 'superadmin' && <TabsTrigger value="admins">管理员</TabsTrigger>}
         </TabsList>
         <TabsContent value="weeks"><WeeksTab /></TabsContent>
+        <TabsContent value="special"><SpecialDatesTab /></TabsContent>
         <TabsContent value="export"><ExportTab /></TabsContent>
         <TabsContent value="transfer"><TransferTab /></TabsContent>
         <TabsContent value="grades"><GradesTab /></TabsContent>
@@ -108,6 +110,109 @@ function WeeksTab() {
             ))}
             {weeks.data?.length === 0 && <p className="text-fg-muted">还没有开过周。</p>}
           </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+/* ---------------- 特殊日期 ---------------- */
+
+function SpecialDatesTab() {
+  const qc = useQueryClient()
+  const list = useQuery({ queryKey: ['specialDates'], queryFn: () => api.listSpecialDates() })
+  const [date, setDate] = useState('')
+  const [kind, setKind] = useState<'holiday' | 'makeup'>('holiday')
+  const [note, setNote] = useState('')
+
+  const add = useMutation({
+    mutationFn: () => api.addSpecialDate(date, kind, note || undefined),
+    onSuccess: (r) => {
+      const bits: string[] = []
+      if (typeof r['markedHoliday'] === 'number') bits.push(`${r['markedHoliday']} 行改为节假日`)
+      if (typeof r['insertedRows'] === 'number') bits.push(`补插 ${r['insertedRows']} 行`)
+      const ow = r['overwritten'] as unknown[] | undefined
+      if (ow?.length) bits.push(`覆盖 ${ow.length} 条异常标记`)
+      toast.success(`已设置${bits.length ? '：' + bits.join('，') : ''}`, { duration: 6000 })
+      setDate(''); setNote('')
+      void qc.invalidateQueries({ queryKey: ['specialDates'] })
+      void qc.invalidateQueries({ queryKey: ['stats'] })
+    },
+    onError: (e) => toast.error(e.message),
+  })
+
+  const remove = useMutation({
+    mutationFn: api.removeSpecialDate,
+    onSuccess: () => {
+      toast.success('已撤销')
+      void qc.invalidateQueries({ queryKey: ['specialDates'] })
+      void qc.invalidateQueries({ queryKey: ['stats'] })
+    },
+    onError: (e) => toast.error(e.message),
+  })
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <Card>
+        <CardHeader className="pb-3"><CardTitle className="text-base">新增特殊日期</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1.5">
+            <Label>类型</Label>
+            <Select value={kind} onValueChange={(v) => setKind(v as 'holiday' | 'makeup')}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="holiday">假日（停点，限周一~四/日）</SelectItem>
+                <SelectItem value="makeup">补课（加点，限周五/六）</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label>日期</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>备注</Label>
+            <Input value={note} onChange={(e) => setNote(e.target.value)}
+                   placeholder="如 端午节 / 五一调休补课" />
+          </div>
+          <Button disabled={!date || add.isPending} onClick={() => add.mutate()}>
+            {add.isPending ? '处理中…' : '设置'}
+          </Button>
+          <p className="text-xs text-fg-faint">
+            假日：当天已开周的记录改为「节假日」、统计剔除，跨假日的假条自动跳过。
+            补课：当天为全体补出勤行、可正常点名。已开周的会即时修复，未开周的开周时自动处理。
+          </p>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader className="pb-3"><CardTitle className="text-base">已设置</CardTitle></CardHeader>
+        <CardContent className="space-y-1.5">
+          {(list.data ?? []).length === 0 ? (
+            <p className="text-sm text-fg-muted">暂无特殊日期。</p>
+          ) : (
+            (list.data ?? []).map((s) => (
+              <div key={s.date}
+                   className="flex items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-bg-subtle">
+                <span className="font-mono">{s.date}</span>
+                <span className="rounded-md px-1.5 py-0.5 text-xs font-medium"
+                      style={s.kind === 'holiday'
+                        ? { color: 'var(--st-absent)', background: 'var(--st-absent-bg)' }
+                        : { color: 'var(--st-public)', background: 'var(--st-public-bg)' }}>
+                  {s.kind === 'holiday' ? '假日' : '补课'}
+                </span>
+                {s.note && <span className="text-xs text-fg-muted">{s.note}</span>}
+                <Button variant="ghost" size="sm" className="ml-auto h-6 px-2 text-xs"
+                        disabled={remove.isPending}
+                        onClick={() => {
+                          if (window.confirm(`撤销 ${s.date} 的${s.kind === 'holiday' ? '假日' : '补课'}设置？`)) {
+                            remove.mutate(s.date)
+                          }
+                        }}>
+                  撤销
+                </Button>
+              </div>
+            ))
+          )}
         </CardContent>
       </Card>
     </div>

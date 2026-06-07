@@ -24,7 +24,8 @@ from pathlib import Path
 from _db import PROJECT_ROOT, connect
 
 GRID_COLS = ["term", "week_no", "grade", "major", "class_name",
-             "student_id", "student_name", "周一", "周二", "周三", "周四", "周日"]
+             "student_id", "student_name", "周一", "周二", "周三", "周四",
+             "周五", "周六", "周日"]
 LONG_COLS = ["term", "week_no", "date", "grade", "major", "class_name",
              "student_id", "student_name", "status", "reason", "return_date"]
 

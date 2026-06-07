@@ -14,7 +14,7 @@ const NAV_USER = [{ to: '/', label: '我的考勤', icon: CalendarCheck }]
 const NAV_ADMIN = [
   { to: '/dashboard', label: '统计', icon: LayoutDashboard },
   { to: '/classes', label: '班级周表', icon: ClipboardList },
-  { to: '/leaves', label: '假条审批', icon: FileCheck },
+  { to: '/leaves', label: '假条核查', icon: FileCheck },
   { to: '/students', label: '学生查询', icon: Search },
   { to: '/audit', label: '审计日志', icon: ScrollText },
   { to: '/admin', label: '管理', icon: Settings },

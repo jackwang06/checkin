@@ -1,0 +1,124 @@
+- generic:
+  - generic:
+    - generic:
+      - banner:
+        - generic:
+          - link:
+            - /url: /
+            - img
+            - text: 晚点名
+          - navigation:
+            - link:
+              - /url: /
+              - img
+              - text: 我的考勤
+            - link:
+              - /url: /dashboard
+              - img
+              - text: 统计
+            - link:
+              - /url: /classes
+              - img
+              - text: 班级周表
+            - link:
+              - /url: /leaves
+              - img
+              - text: 假条核查
+            - link:
+              - /url: /students
+              - img
+              - text: 学生查询
+            - link:
+              - /url: /audit
+              - img
+              - text: 审计日志
+            - link:
+              - /url: /admin
+              - img
+              - text: 管理
+          - generic:
+            - button:
+              - generic:
+                - img
+              - generic: 超级管理员
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - heading [level=1]: 班级周表
+              - generic:
+                - generic:
+                  - combobox [expanded]:
+                    - generic: 选择班级
+                    - img
+                - generic:
+                  - combobox:
+                    - generic: 2025-2026-2 第 15 周
+                    - img
+            - paragraph: 请先选择班级和周次。
+      - contentinfo: 晚点名考勤系统 · 统计口径按学生当前班级归属
+    - region "Notifications alt+T"
+  - listbox [ref=e65]:
+    - option "信息安全23-1（30人）" [active] [ref=e66]:
+      - generic [ref=e68]: 信息安全23-1（30人）
+    - option "信息安全23-2（34人）" [ref=e69]:
+      - generic [ref=e71]: 信息安全23-2（34人）
+    - option "电信23-1（实验班）（33人）" [ref=e72]:
+      - generic [ref=e74]: 电信23-1（实验班）（33人）
+    - option "电信23-2（41人）" [ref=e75]:
+      - generic [ref=e77]: 电信23-2（41人）
+    - option "网安23-1（32人）" [ref=e78]:
+      - generic [ref=e80]: 网安23-1（32人）
+    - option "计算机23-1（卓越班）（43人）" [ref=e81]:
+      - generic [ref=e83]: 计算机23-1（卓越班）（43人）
+    - option "计算机23-2（37人）" [ref=e84]:
+      - generic [ref=e86]: 计算机23-2（37人）
+    - option "计算机23-3（38人）" [ref=e87]:
+      - generic [ref=e89]: 计算机23-3（38人）
+    - option "通信23-1（30人）" [ref=e90]:
+      - generic [ref=e92]: 通信23-1（30人）
+    - option "通信23-2（32人）" [ref=e93]:
+      - generic [ref=e95]: 通信23-2（32人）
+    - option "信息安全24-1（35人）" [ref=e96]:
+      - generic [ref=e98]: 信息安全24-1（35人）
+    - option "信息安全24-2（39人）" [ref=e99]:
+      - generic [ref=e101]: 信息安全24-2（39人）
+    - option "电信24-1（实验班）（28人）" [ref=e102]:
+      - generic [ref=e104]: 电信24-1（实验班）（28人）
+    - option "电信24-2（50人）" [ref=e105]:
+      - generic [ref=e107]: 电信24-2（50人）
+    - option "网安24-1（31人）" [ref=e108]:
+      - generic [ref=e110]: 网安24-1（31人）
+    - option "计算机24-1（卓越班）（39人）" [ref=e111]:
+      - generic [ref=e113]: 计算机24-1（卓越班）（39人）
+    - option "计算机24-2（40人）" [ref=e114]:
+      - generic [ref=e116]: 计算机24-2（40人）
+    - option "计算机24-3（38人）" [ref=e117]:
+      - generic [ref=e119]: 计算机24-3（38人）
+    - option "通信24-1（33人）" [ref=e120]:
+      - generic [ref=e122]: 通信24-1（33人）
+    - option "通信24-2（34人）" [ref=e123]:
+      - generic [ref=e125]: 通信24-2（34人）
+    - option "信息安全25-1（卓越班）（33人）" [ref=e126]:
+      - generic [ref=e128]: 信息安全25-1（卓越班）（33人）
+    - option "信息安全25-2（38人）" [ref=e129]:
+      - generic [ref=e131]: 信息安全25-2（38人）
+    - option "电信25-1（实验班）（33人）" [ref=e132]:
+      - generic [ref=e134]: 电信25-1（实验班）（33人）
+    - option "电信25-2（44人）" [ref=e135]:
+      - generic [ref=e137]: 电信25-2（44人）
+    - option "网安25-1（34人）" [ref=e138]:
+      - generic [ref=e140]: 网安25-1（34人）
+    - option "网安25-2（35人）" [ref=e141]:
+      - generic [ref=e143]: 网安25-2（35人）
+    - option "计算机25-1（卓越班）（43人）" [ref=e144]:
+      - generic [ref=e146]: 计算机25-1（卓越班）（43人）
+    - option "计算机25-2（32人）" [ref=e147]:
+      - generic [ref=e149]: 计算机25-2（32人）
+    - option "计算机25-3（33人）" [ref=e150]:
+      - generic [ref=e152]: 计算机25-3（33人）
+    - option "通信25-1（36人）" [ref=e153]:
+      - generic [ref=e155]: 通信25-1（36人）
+    - option "通信25-2（33人）" [ref=e156]:
+      - generic [ref=e158]: 通信25-2（33人）
+    - img [ref=e160]

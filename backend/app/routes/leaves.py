@@ -65,6 +65,12 @@ def review(leave_id: int, body: LeaveReviewIn, request: Request,
     if row is None:
         raise HTTPException(404, "假条不存在")
 
+    # 学生姓名/班级（审计可读性）
+    stu = conn.execute(
+        "SELECT s.name, c.full_name FROM student s JOIN class c ON c.id = s.class_id "
+        "WHERE s.id = ?", (row["student_id"],),
+    ).fetchone()
+
     report: dict = {}
     with conn:
         if row["status"] == "pending":
@@ -90,7 +96,10 @@ def review(leave_id: int, body: LeaveReviewIn, request: Request,
             (body.decision, user["id"], body.comment, leave_id),
         )
         audit.log(conn, user["id"], action, f"leave:{leave_id}",
-                  {"studentId": row["student_id"], "decision": body.decision,
+                  {"studentId": row["student_id"],
+                   "studentName": stu["name"] if stu else None,
+                   "className": stu["full_name"] if stu else None,
+                   "type": row["type"], "decision": body.decision,
                    "comment": body.comment, **report},
                   client_ip(request))
 

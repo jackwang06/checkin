@@ -1,15 +1,19 @@
 """班级列表 + 班级×周交互二维表（管理员）。"""
 
 import sqlite3
-from datetime import date as date_cls, timedelta
+from datetime import date as date_cls
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..db import get_db
 from ..deps import require_admin
-from ..services.grids import DAY_KEYS, DAY_LABELS
 
 router = APIRouter(prefix="/classes", tags=["classes"])
+
+# Python weekday() → (列key, 中文标签)
+WD_INFO = {0: ("mon", "周一"), 1: ("tue", "周二"), 2: ("wed", "周三"),
+           3: ("thu", "周四"), 4: ("fri", "周五"), 5: ("sat", "周六"),
+           6: ("sun", "周日")}
 
 
 @router.get("")
@@ -56,12 +60,13 @@ def class_grid(class_id: int, term: str, week_no: int,
     if wk is None:
         raise HTTPException(404, f"{term} 第 {week_no} 周还未开周")
 
+    from rollcall import effective_dates   # scripts/ 共享模块（含假日列、补课列）
+
     start = date_cls.fromisoformat(wk["start_date"])
-    offsets = (0, 1, 2, 3, 6)        # 周一~周四 + 周日，周五/周六不点名
-    dates = [
-        {"key": k, "label": DAY_LABELS[k], "date": (start + timedelta(days=o)).isoformat()}
-        for k, o in zip(DAY_KEYS, offsets)
-    ]
+    dates = []
+    for ds in effective_dates(conn, start):
+        key, label = WD_INFO[date_cls.fromisoformat(ds).weekday()]
+        dates.append({"key": key, "label": label, "date": ds})
 
     students = conn.execute(
         "SELECT id, name FROM student WHERE class_id = ? AND status = 'active' "

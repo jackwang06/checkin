@@ -3,8 +3,8 @@
 import { request, type QueryValue } from './client'
 import type {
   AdminUser, AuditItem, ClassGrid, ClassInfo, GradeInfo, LeaveRequest,
-  StatsRow, Status, StudentHit, StudentReport, User, Week, WeekGridRow,
-  AbnormalRow,
+  SpecialDate, StatsRow, Status, StudentHit, StudentReport, User, Week,
+  WeekGridRow, AbnormalRow,
 } from './types'
 
 // ---- auth ----
@@ -139,4 +139,24 @@ export const dismissAdmin = (id: string) =>
 export const auditLog = (q: Record<string, QueryValue>) =>
   request<{ items: AuditItem[]; total: number }>({
     method: 'GET', path: '/audit-log', query: q,
+  })
+
+// ---- special dates ----
+export const listSpecialDates = (q: { from_date?: string; to_date?: string } = {}) =>
+  request<SpecialDate[]>({ method: 'GET', path: '/special-dates', query: q })
+
+export const addSpecialDate = (date: string, kind: 'holiday' | 'makeup', note?: string) =>
+  request<Record<string, unknown>>({
+    method: 'POST', path: '/special-dates', body: { date, kind, note },
+  })
+
+export const removeSpecialDate = (date: string) =>
+  request<Record<string, unknown>>({
+    method: 'DELETE', path: `/special-dates/${date}`,
+  })
+
+// ---- reset password ----
+export const resetPassword = (accountId: string) =>
+  request<{ id: string; reset: boolean; note: string }>({
+    method: 'POST', path: `/users/${accountId}/reset-password`,
   })

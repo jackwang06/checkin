@@ -19,8 +19,8 @@ export type Week = {
   endDate: string
 }
 
-/** 5 种考勤状态（与后端 status_def 一致） */
-export type Status = '无异常' | '公假' | '事假' | '旷到' | '失联'
+/** 人工 5 种 + 系统 1 种（节假日）考勤状态 */
+export type Status = '无异常' | '公假' | '事假' | '旷到' | '失联' | '节假日'
 
 export type WeekGridRow = {
   term: string
@@ -29,7 +29,16 @@ export type WeekGridRow = {
   tue: Status | null
   wed: Status | null
   thu: Status | null
+  fri: Status | null
+  sat: Status | null
   sun: Status | null
+}
+
+export type SpecialDate = {
+  date: string
+  kind: 'holiday' | 'makeup'
+  note: string | null
+  createdAt?: string
 }
 
 export type AbnormalRow = {

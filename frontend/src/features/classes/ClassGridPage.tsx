@@ -255,6 +255,15 @@ function CellButton({
   const [reason, setReason] = useState(cell?.reason ?? '')
   const [returnDate, setReturnDate] = useState(cell?.returnDate ?? '')
 
+  // 节假日：系统状态，不可编辑
+  if (cell?.status === '节假日') {
+    return (
+      <div className="w-full px-1 py-1 text-center" title="节假日不点名">
+        <StatusChip status="节假日" />
+      </div>
+    )
+  }
+
   return (
     <Popover
       open={open}

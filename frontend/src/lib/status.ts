@@ -2,6 +2,7 @@
 
 import type { Status } from '@/api/types'
 
+// 人工可选状态（不含系统的「节假日」）
 export const STATUSES: Status[] = ['无异常', '公假', '事假', '旷到', '失联']
 
 export const STATUS_STYLE: Record<Status, { fg: string; bg: string }> = {
@@ -10,6 +11,7 @@ export const STATUS_STYLE: Record<Status, { fg: string; bg: string }> = {
   事假: { fg: 'var(--st-personal)', bg: 'var(--st-personal-bg)' },
   旷到: { fg: 'var(--st-absent)', bg: 'var(--st-absent-bg)' },
   失联: { fg: 'var(--st-lost)', bg: 'var(--st-lost-bg)' },
+  节假日: { fg: 'var(--color-text-faint)', bg: 'rgba(155, 154, 151, 0.14)' },
 }
 
 export const LEAVE_STATUS_LABEL: Record<string, string> = {

@@ -3,9 +3,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, Paperclip, X } from 'lucide-react'
 import { toast } from 'sonner'
 import * as api from '@/api/endpoints'
-import { fetchBlob } from '@/api/client'
 import type { LeaveRequest } from '@/api/types'
 import { StatusChip, TintChip } from '@/components/StatusChip'
+import { AttachmentPreview } from '@/components/AttachmentPreview'
 import { LEAVE_STATUS_LABEL, LEAVE_STATUS_STYLE } from '@/lib/status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,7 +47,7 @@ export function LeaveReviewPage() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="font-serif text-xl font-semibold">假条审批</h1>
+        <h1 className="font-serif text-xl font-semibold">假条核查</h1>
         <Tabs value={tab} onValueChange={setTab} className="ml-auto">
           <TabsList>
             <TabsTrigger value="pending">待审批</TabsTrigger>
@@ -84,16 +84,8 @@ function LeaveCard({
   onReview: (d: 'approved' | 'rejected', comment?: string) => void
 }) {
   const [comment, setComment] = useState('')
+  const [preview, setPreview] = useState(false)
   const st = LEAVE_STATUS_STYLE[l.status] ?? LEAVE_STATUS_STYLE['cancelled']!
-
-  const openAttachment = async () => {
-    try {
-      const blob = await fetchBlob(`/leave-requests/${l.id}/attachment`)
-      window.open(URL.createObjectURL(blob), '_blank')
-    } catch {
-      toast.error('附件获取失败')
-    }
-  }
 
   return (
     <div className="rounded-lg border border-border bg-bg p-4 shadow-card">
@@ -111,11 +103,13 @@ function LeaveCard({
       <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-faint">
         <span>提交于 {l.createdAt}</span>
         {l.hasAttachment && (
-          <button onClick={() => void openAttachment()}
+          <button onClick={() => setPreview(true)}
                   className="inline-flex items-center gap-1 text-link hover:underline">
             <Paperclip size={12} /> 查看证明材料
           </button>
         )}
+        <AttachmentPreview leaveId={preview ? l.id : null} scope="admin"
+                           open={preview} onOpenChange={setPreview} />
         {l.reviewedBy && <span>· {l.reviewedBy} 审批于 {l.reviewedAt}</span>}
         {l.reviewComment && <span>· 意见：{l.reviewComment}</span>}
       </div>

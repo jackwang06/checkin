@@ -8,18 +8,12 @@
 """
 
 import json
-from datetime import date, timedelta
 
 
-def leave_dates(start_date: str, end_date: str) -> list[str]:
-    """假条区间内的考勤日（跳周五、周六）。"""
-    d0, d1 = date.fromisoformat(start_date), date.fromisoformat(end_date)
-    out, d = [], d0
-    while d <= d1:
-        if d.weekday() not in (4, 5):  # 4=周五 5=周六 不点名
-            out.append(d.isoformat())
-        d += timedelta(days=1)
-    return out
+def leave_dates(conn, start_date: str, end_date: str) -> list[str]:
+    """假条区间内的考勤日（跳假日，含补课日；按 rollcall 单一真相源）。"""
+    from rollcall import date_range_rollcall
+    return date_range_rollcall(conn, start_date, end_date)
 
 
 def apply_leave(conn, leave_row: dict, only_dates: list[str] | None = None) -> dict:
@@ -31,7 +25,7 @@ def apply_leave(conn, leave_row: dict, only_dates: list[str] | None = None) -> d
     返回 {applied: [...], skipped_no_week: [...], overwritten: [{date, from}]}
     """
     already = set(json.loads(leave_row["applied_dates"] or "[]"))
-    candidates = [d for d in leave_dates(leave_row["start_date"], leave_row["end_date"])
+    candidates = [d for d in leave_dates(conn, leave_row["start_date"], leave_row["end_date"])
                   if d not in already and (only_dates is None or d in only_dates)]
 
     applied, skipped, overwritten = [], [], []
@@ -97,7 +91,7 @@ def backfill_approved_leaves(conn, week_id: int) -> list[dict]:
     ).fetchone()
     if wk is None:
         return []
-    week_days = leave_dates(wk[0], wk[1])
+    week_days = leave_dates(conn, wk[0], wk[1])
 
     rows = conn.execute(
         """

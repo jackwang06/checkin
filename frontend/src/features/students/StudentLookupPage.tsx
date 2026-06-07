@@ -1,18 +1,14 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Search } from 'lucide-react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { KeyRound, Search } from 'lucide-react'
+import { toast } from 'sonner'
 import * as api from '@/api/endpoints'
-import type { WeekGridRow } from '@/api/types'
 import { StatusChip } from '@/components/StatusChip'
+import { visibleDayCols } from '@/lib/grid'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/cn'
-
-const DAY_COLS: { key: keyof WeekGridRow; label: string }[] = [
-  { key: 'mon', label: '周一' }, { key: 'tue', label: '周二' },
-  { key: 'wed', label: '周三' }, { key: 'thu', label: '周四' },
-  { key: 'sun', label: '周日' },
-]
 
 export function StudentLookupPage() {
   const [q, setQ] = useState('')
@@ -27,6 +23,12 @@ export function StudentLookupPage() {
     queryKey: ['studentReport', selected],
     queryFn: () => api.studentReport(selected!),
     enabled: !!selected,
+  })
+
+  const reset = useMutation({
+    mutationFn: api.resetPassword,
+    onSuccess: (r) => toast.success(r.note, { duration: 6000 }),
+    onError: (e) => toast.error(e.message),
   })
 
   return (
@@ -70,15 +72,28 @@ export function StudentLookupPage() {
               <span className="text-sm font-normal text-fg-muted">
                 {report.data.student.grade}级 {report.data.student.major} · {report.data.student.className}
               </span>
+              <Button variant="outline" size="sm" className="ml-auto h-7 text-xs"
+                      disabled={reset.isPending}
+                      onClick={() => {
+                        if (window.confirm(
+                          `确认重置 ${report.data!.student.name}（${report.data!.student.id}）的密码？\n` +
+                          `将重置为学号本身，该生下次登录需改密。`,
+                        )) reset.mutate(report.data!.student.id)
+                      }}>
+                <KeyRound size={12} className="mr-1" /> 重置密码
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {(() => {
+              const cols = visibleDayCols(report.data.grid)
+              return (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-fg-muted">
                     <th className="py-2 pr-3 font-medium">周次</th>
-                    {DAY_COLS.map((d) => (
+                    {cols.map((d) => (
                       <th key={d.key} className="px-2 py-2 font-medium">{d.label}</th>
                     ))}
                   </tr>
@@ -90,9 +105,9 @@ export function StudentLookupPage() {
                       <td className="py-2 pr-3 whitespace-nowrap text-fg-muted">
                         第 {row.weekNo} 周
                       </td>
-                      {DAY_COLS.map((d) => (
+                      {cols.map((d) => (
                         <td key={d.key} className="px-2 py-2">
-                          <StatusChip status={row[d.key] as WeekGridRow['mon']} muted />
+                          <StatusChip status={row[d.key]} muted />
                         </td>
                       ))}
                     </tr>
@@ -100,6 +115,8 @@ export function StudentLookupPage() {
                 </tbody>
               </table>
             </div>
+              )
+            })()}
             <div className={cn('mt-4 border-t border-border pt-3',
                                report.data.abnormal.length === 0 && 'text-fg-muted')}>
               {report.data.abnormal.length === 0 ? (

@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from ..db import get_db
 from ..deps import client_ip, get_current_user, load_user
 from ..schemas import ChangePasswordIn, LoginIn
-from ..services import audit
 from ..services.security import create_token, hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -68,7 +67,6 @@ def login(body: LoginIn, request: Request, conn: sqlite3.Connection = Depends(ge
 @router.post("/change-password", status_code=204)
 def change_password(
     body: ChangePasswordIn,
-    request: Request,
     conn: sqlite3.Connection = Depends(get_db),
     user: dict = Depends(get_current_user),     # 允许 must_change 状态调用
 ):
@@ -86,8 +84,7 @@ def change_password(
             "UPDATE users SET password_hash = ?, must_change_password = 0 WHERE id = ?",
             (hash_password(body.new_password), user["id"]),
         )
-        audit.log(conn, user["id"], "auth.change_password", user["id"],
-                  None, client_ip(request))
+        # 改密属个人隐私操作，不记审计
 
 
 @router.get("/me")

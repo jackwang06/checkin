@@ -3,10 +3,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CalendarPlus, Paperclip, Undo2 } from 'lucide-react'
 import { toast } from 'sonner'
 import * as api from '@/api/endpoints'
-import { fetchBlob } from '@/api/client'
-import type { LeaveRequest, WeekGridRow } from '@/api/types'
+import type { LeaveRequest } from '@/api/types'
 import { StatusChip, TintChip } from '@/components/StatusChip'
+import { AttachmentPreview } from '@/components/AttachmentPreview'
 import { LEAVE_STATUS_LABEL, LEAVE_STATUS_STYLE } from '@/lib/status'
+import { visibleDayCols } from '@/lib/grid'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,12 +19,6 @@ import {
   Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card'
 import { useAuthStore } from '@/stores/authStore'
-
-const DAY_COLS: { key: keyof WeekGridRow; label: string }[] = [
-  { key: 'mon', label: '周一' }, { key: 'tue', label: '周二' },
-  { key: 'wed', label: '周三' }, { key: 'thu', label: '周四' },
-  { key: 'sun', label: '周日' },
-]
 
 export function MyAttendancePage() {
   const user = useAuthStore((s) => s.user)
@@ -56,34 +51,39 @@ export function MyAttendancePage() {
             ) : !att.data?.grid.length ? (
               <p className="text-sm text-fg-muted">还没有考勤记录（学期尚未开周）。</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left text-xs text-fg-muted">
-                      <th className="py-2 pr-3 font-medium">周次</th>
-                      {DAY_COLS.map((d) => (
-                        <th key={d.key} className="px-2 py-2 font-medium">{d.label}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {att.data.grid.map((row) => (
-                      <tr key={`${row.term}-${row.weekNo}`}
-                          className="border-b border-border last:border-0 hover:bg-bg-subtle transition">
-                        <td className="py-2 pr-3 whitespace-nowrap text-fg-muted">
-                          第 {row.weekNo} 周
-                        </td>
-                        {DAY_COLS.map((d) => (
-                          <td key={d.key} className="px-2 py-2">
-                            <StatusChip status={row[d.key] as WeekGridRow['mon']} muted />
-                          </td>
+              (() => {
+                const cols = visibleDayCols(att.data.grid)
+                return (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left text-xs text-fg-muted">
+                          <th className="py-2 pr-3 font-medium">周次</th>
+                          {cols.map((d) => (
+                            <th key={d.key} className="px-2 py-2 font-medium">{d.label}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {att.data.grid.map((row) => (
+                          <tr key={`${row.term}-${row.weekNo}`}
+                              className="border-b border-border last:border-0 hover:bg-bg-subtle transition">
+                            <td className="py-2 pr-3 whitespace-nowrap text-fg-muted">
+                              第 {row.weekNo} 周
+                            </td>
+                            {cols.map((d) => (
+                              <td key={d.key} className="px-2 py-2">
+                                <StatusChip status={row[d.key]} muted />
+                              </td>
+                            ))}
+                          </tr>
                         ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                <p className="mt-2 text-xs text-fg-faint">· 表示无异常；周五、周六无晚点名</p>
-              </div>
+                      </tbody>
+                    </table>
+                    <p className="mt-2 text-xs text-fg-faint">· 表示无异常；周五、周六默认无晚点名（补课除外）</p>
+                  </div>
+                )
+              })()
             )}
             {att.data && att.data.abnormal.length > 0 && (
               <div className="mt-4 space-y-1.5 border-t border-border pt-3">
@@ -113,6 +113,7 @@ export function MyAttendancePage() {
 
 function MyLeaveList({ leaves, loading }: { leaves: LeaveRequest[]; loading: boolean }) {
   const qc = useQueryClient()
+  const [preview, setPreview] = useState<number | null>(null)
   const cancel = useMutation({
     mutationFn: api.cancelLeave,
     onSuccess: () => {
@@ -121,15 +122,6 @@ function MyLeaveList({ leaves, loading }: { leaves: LeaveRequest[]; loading: boo
     },
     onError: (e) => toast.error(e.message),
   })
-
-  const openAttachment = async (id: number) => {
-    try {
-      const blob = await fetchBlob(`/me/leave-requests/${id}/attachment`)
-      window.open(URL.createObjectURL(blob), '_blank')
-    } catch {
-      toast.error('附件获取失败')
-    }
-  }
 
   return (
     <Card>
@@ -153,7 +145,7 @@ function MyLeaveList({ leaves, loading }: { leaves: LeaveRequest[]; loading: boo
                   <TintChip label={LEAVE_STATUS_LABEL[l.status] ?? l.status}
                             fg={st.fg} bg={st.bg} />
                   {l.hasAttachment && (
-                    <button onClick={() => void openAttachment(l.id)}
+                    <button onClick={() => setPreview(l.id)}
                             className="inline-flex items-center gap-1 text-xs text-link hover:underline">
                       <Paperclip size={12} /> 证明材料
                     </button>
@@ -175,6 +167,9 @@ function MyLeaveList({ leaves, loading }: { leaves: LeaveRequest[]; loading: boo
           })
         )}
       </CardContent>
+      <AttachmentPreview leaveId={preview} scope="me"
+                         open={preview !== null}
+                         onOpenChange={(o) => !o && setPreview(null)} />
     </Card>
   )
 }
@@ -214,7 +209,7 @@ function LeaveForm() {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 font-serif text-lg">
           <CalendarPlus size={18} strokeWidth={1.75} className="text-link" />
-          申请假条
+          上传假条
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -254,10 +249,10 @@ function LeaveForm() {
         </div>
         <Button className="w-full" disabled={!ok || submit.isPending}
                 onClick={() => submit.mutate()}>
-          {submit.isPending ? '提交中…' : '提交申请'}
+          {submit.isPending ? '提交中…' : '提交'}
         </Button>
         <p className="text-xs text-fg-faint">
-          批准后将自动写入对应日期的考勤记录（周五、周六无晚点名）。
+          通过核查后将自动写入对应日期的考勤记录（节假日不点名，跨假日自动跳过）。
         </p>
       </CardContent>
     </Card>
