@@ -1,7 +1,7 @@
 -- ============================================================
 -- 晚点名考勤数据库 schema（真相来源）
 -- 层级：周(时间轴) → 年级 → 专业 → 班级 → 学号 → 日考勤
--- 日考勤覆盖 周一~周五 + 周日（无周六），每日状态有且仅有 5 种：
+-- 日考勤覆盖 周一~周四 + 周日（周五、周六不点名），每日状态有且仅有 5 种：
 --   无异常（默认）/ 公假 / 事假 / 旷到 / 失联
 -- 注意：foreign_keys 是连接级 PRAGMA，每个连接都必须重新开启！
 --       （scripts/ 下所有脚本均已强制 PRAGMA foreign_keys=ON）
@@ -113,10 +113,12 @@ CREATE INDEX IF NOT EXISTS idx_class_major   ON class (major_id);
 
 -- ============================================================
 -- 视图（按时间轴最外层组织）
+-- 视图用 DROP+CREATE：改定义后重跑 init_db 即完成迁移（视图无状态）
 -- ============================================================
 
 -- 底层长表：attendance 挂全维度，各级统计共用
-CREATE VIEW IF NOT EXISTS v_att_enriched AS
+DROP VIEW IF EXISTS v_att_enriched;
+CREATE VIEW v_att_enriched AS
 SELECT
     w.term,
     w.week_no,
@@ -143,10 +145,11 @@ JOIN major      m  ON m.id = c.major_id
 JOIN week       w  ON w.id = a.week_id
 JOIN status_def sd ON sd.code = a.status;
 
--- 班级×周 二维表：行=学号/姓名，列=周一..周五、周日（无周六）
+-- 班级×周 二维表：行=学号/姓名，列=周一..周四、周日（周五/周六不点名）
 -- 用法：SELECT * FROM v_week_grid
 --       WHERE class_name='电信24-2' AND term='2025-2026-1' AND week_no=1;
-CREATE VIEW IF NOT EXISTS v_week_grid AS
+DROP VIEW IF EXISTS v_week_grid;
+CREATE VIEW v_week_grid AS
 SELECT
     term,
     week_no,
@@ -159,7 +162,6 @@ SELECT
     MAX(CASE WHEN strftime('%w', date) = '2' THEN status END) AS 周二,
     MAX(CASE WHEN strftime('%w', date) = '3' THEN status END) AS 周三,
     MAX(CASE WHEN strftime('%w', date) = '4' THEN status END) AS 周四,
-    MAX(CASE WHEN strftime('%w', date) = '5' THEN status END) AS 周五,
     MAX(CASE WHEN strftime('%w', date) = '0' THEN status END) AS 周日
 FROM v_att_enriched
 GROUP BY week_id, student_id;
@@ -168,7 +170,8 @@ GROUP BY week_id, student_id;
 -- 分级统计（按 周 → 年级 → 专业 → 班级 逐级下钻）
 -- 口径：仅统计在读学生 + 未归档年级；归档后历史行保留但退出统计
 -- ------------------------------------------------------------
-CREATE VIEW IF NOT EXISTS v_stats_class AS
+DROP VIEW IF EXISTS v_stats_class;
+CREATE VIEW v_stats_class AS
 SELECT
     term, week_no, grade, major, class_name,
     COUNT(*)                                              AS 应到人次,
@@ -182,7 +185,8 @@ FROM v_att_enriched
 WHERE grade_status = 'active' AND student_status = 'active'
 GROUP BY week_id, class_id;
 
-CREATE VIEW IF NOT EXISTS v_stats_major AS
+DROP VIEW IF EXISTS v_stats_major;
+CREATE VIEW v_stats_major AS
 SELECT
     term, week_no, grade, major,
     COUNT(*)                                              AS 应到人次,
@@ -196,7 +200,8 @@ FROM v_att_enriched
 WHERE grade_status = 'active' AND student_status = 'active'
 GROUP BY week_id, grade, major;
 
-CREATE VIEW IF NOT EXISTS v_stats_grade AS
+DROP VIEW IF EXISTS v_stats_grade;
+CREATE VIEW v_stats_grade AS
 SELECT
     term, week_no, grade,
     COUNT(*)                                              AS 应到人次,
@@ -210,7 +215,8 @@ FROM v_att_enriched
 WHERE grade_status = 'active' AND student_status = 'active'
 GROUP BY week_id, grade;
 
-CREATE VIEW IF NOT EXISTS v_stats_overall AS
+DROP VIEW IF EXISTS v_stats_overall;
+CREATE VIEW v_stats_overall AS
 SELECT
     term, week_no,
     COUNT(*)                                              AS 应到人次,
@@ -296,20 +302,24 @@ CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log (action, created_at);
 -- 自检视图：期望均为 0 行（提交前跑一遍）
 -- ------------------------------------------------------------
 -- 状态值不在字典内（FK 关闭时写入的脏数据）
-CREATE VIEW IF NOT EXISTS v_check_unknown_status AS
+DROP VIEW IF EXISTS v_check_unknown_status;
+CREATE VIEW v_check_unknown_status AS
 SELECT a.student_id, a.date, a.status
 FROM attendance a
 LEFT JOIN status_def sd ON sd.code = a.status
 WHERE sd.code IS NULL;
 
--- 考勤日期落在周六（不应存在）
-CREATE VIEW IF NOT EXISTS v_check_saturday AS
+-- 考勤日期落在非点名日：周五('5')/周六('6')（不应存在）
+DROP VIEW IF EXISTS v_check_saturday;
+DROP VIEW IF EXISTS v_check_non_rollcall;
+CREATE VIEW v_check_non_rollcall AS
 SELECT student_id, date, status
 FROM attendance
-WHERE strftime('%w', date) = '6';
+WHERE strftime('%w', date) IN ('5', '6');
 
 -- 考勤日期不在所属周范围内
-CREATE VIEW IF NOT EXISTS v_check_date_outside_week AS
+DROP VIEW IF EXISTS v_check_date_outside_week;
+CREATE VIEW v_check_date_outside_week AS
 SELECT a.student_id, a.date, w.term, w.week_no, w.start_date, w.end_date
 FROM attendance a
 JOIN week w ON w.id = a.week_id

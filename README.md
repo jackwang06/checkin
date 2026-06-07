@@ -18,9 +18,9 @@ SQLite 数据层 + CLI 工具 + **Web 应用**（FastAPI 后端 + React/Notion �
   ```
 - **服务器更新**：`./deploy.sh`（git pull → uv sync → 迁移 → 重启后端 → 健康检查 → 前端构建）
 - **学生账号初始化**：`uv run python scripts/seed_users.py`（幂等；新名单导入后重跑补账号）
-- **假条语义**：批准时写考勤（跳周六）；未开周日期挂起，开周时自动回填；改判驳回自动还原。
+- **假条语义**：批准时写考勤（跳周五、周六）；未开周日期挂起，开周时自动回填；改判驳回自动还原。
 
-- 日考勤覆盖 **周一~周五 + 周日**（无周六），每生每天一行，全量存储
+- 日考勤覆盖 **周一~周四 + 周日**（周五、周六不点名），每生每天一行，全量存储
 - 每日状态**有且仅有 5 种**：`无异常`（默认）/ `公假` / `事假` / `旷到` / `失联`
 - 学号为主键；考勤表复合主键 `(学号, 日期)`
 - 名单：1111 名学生 / 31 个班 / 5 个专业（电信、计算机、通信、网安、信息安全）/ 3 个年级（23-25 级）
@@ -70,7 +70,7 @@ uv run python scripts/sql.py "UPDATE attendance SET status='公假', reason='校
 ## 查询
 
 ```bash
-# 班级×周 二维表（行=学生，列=周一..周五、周日）
+# 班级×周 二维表（行=学生，列=周一..周四、周日）
 uv run python scripts/sql.py "SELECT * FROM v_week_grid WHERE class_name='电信24-2' AND term='2025-2026-2' AND week_no=1"
 
 # 多级统计（按周汇总：应到/无异常/公假/事假/旷到/失联/出勤率）
@@ -139,12 +139,12 @@ uv run python scripts/student_report.py 20231303001 --from-week 1 --to-week 8  #
 uv run python scripts/student_report.py 20231303001 --out 李鑫_考勤.csv      # 导出 CSV
 ```
 
-输出：个人信息 + 周次(行)×周一..周五/周日(列) 二维表 + 异常汇总明细（原因/返校时间）。
+输出：个人信息 + 周次(行)×周一..周四/周日(列) 二维表 + 异常汇总明细（原因/返校时间）。
 
 ## 自检（建议每周跑一次，期望全部 0 行）
 
 ```bash
-uv run python scripts/sql.py "SELECT * FROM v_check_unknown_status; SELECT * FROM v_check_saturday; SELECT * FROM v_check_date_outside_week"
+uv run python scripts/sql.py "SELECT * FROM v_check_unknown_status; SELECT * FROM v_check_non_rollcall; SELECT * FROM v_check_date_outside_week"
 ```
 
 ## 文件说明

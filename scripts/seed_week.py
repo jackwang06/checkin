@@ -2,7 +2,7 @@
 
 用法：uv run python scripts/seed_week.py --term 2025-2026-2 --week-no 1 --start 2026-06-01
   --start 必须是周一（脚本校验）。
-预填范围：周一~周五 + 周日（无周六），所有在读(active)学生，每周 6 天。
+预填范围：周一~周四 + 周日（周五、周六不点名），所有在读(active)学生，每周 5 天。
 
 幂等（ON CONFLICT DO NOTHING）：
   - 重跑不会把已 UPDATE 成「事假」等状态的行刷回「无异常」
@@ -15,11 +15,11 @@ from datetime import date, timedelta
 
 from _db import connect
 
-DAY_OFFSETS = (0, 1, 2, 3, 4, 6)  # 周一~周五 + 周日，跳过周六
+DAY_OFFSETS = (0, 1, 2, 3, 6)  # 周一~周四 + 周日，周五/周六不点名
 
 
 def rollcall_dates(start: date) -> list[str]:
-    """给定周一日期，返回该周 6 个考勤日（ISO 字符串）。"""
+    """给定周一日期，返回该周 5 个考勤日（ISO 字符串）。"""
     return [(start + timedelta(days=o)).isoformat() for o in DAY_OFFSETS]
 
 

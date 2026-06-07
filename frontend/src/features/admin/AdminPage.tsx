@@ -91,7 +91,7 @@ function WeeksTab() {
             {create.isPending ? '开周中…' : '开周并预填'}
           </Button>
           <p className="text-xs text-fg-faint">
-            为全体在读学生预填周一~周五+周日的「无异常」记录（幂等，不覆盖已有状态），
+            为全体在读学生预填周一~周四+周日的「无异常」记录（幂等，不覆盖已有状态），
             并自动回填涉及本周的已批假条。
           </p>
         </CardContent>

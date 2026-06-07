@@ -57,7 +57,7 @@ def class_grid(class_id: int, term: str, week_no: int,
         raise HTTPException(404, f"{term} 第 {week_no} 周还未开周")
 
     start = date_cls.fromisoformat(wk["start_date"])
-    offsets = (0, 1, 2, 3, 4, 6)
+    offsets = (0, 1, 2, 3, 6)        # 周一~周四 + 周日，周五/周六不点名
     dates = [
         {"key": k, "label": DAY_LABELS[k], "date": (start + timedelta(days=o)).isoformat()}
         for k, o in zip(DAY_KEYS, offsets)

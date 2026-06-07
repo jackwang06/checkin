@@ -52,7 +52,7 @@ export function LoginPage() {
             出勤一目了然。
           </h1>
           <p className="mt-3 max-w-sm text-sm leading-relaxed text-fg-muted">
-            周一至周五与周日的晚点名记录、假条申请与审批、
+            周一至周四与周日的晚点名记录、假条申请与审批、
             多级出勤统计——全部在线完成，全程留痕。
           </p>
         </div>

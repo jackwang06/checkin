@@ -1,7 +1,7 @@
 """导出考勤数据为 CSV（Excel 可直接打开），支持 年级 / 班级 / 周 三个口径。
 
 用法（口径可组合）：
-  # 周 level：某周全体 1111 人二维表（行=学生，列=周一..周五、周日）
+  # 周 level：某周全体二维表（行=学生，列=周一..周四、周日）
   uv run python scripts/export.py --term 2025-2026-2 --week-no 1
 
   # 年级 level：某年级某周二维表；不带 --week-no 则导出该年级全部周的长表
@@ -24,7 +24,7 @@ from pathlib import Path
 from _db import PROJECT_ROOT, connect
 
 GRID_COLS = ["term", "week_no", "grade", "major", "class_name",
-             "student_id", "student_name", "周一", "周二", "周三", "周四", "周五", "周日"]
+             "student_id", "student_name", "周一", "周二", "周三", "周四", "周日"]
 LONG_COLS = ["term", "week_no", "date", "grade", "major", "class_name",
              "student_id", "student_name", "status", "reason", "return_date"]
 

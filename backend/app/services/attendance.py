@@ -18,8 +18,8 @@ def upsert_cell(conn: sqlite3.Connection, student_id: str, date: str,
         d = date_cls.fromisoformat(date)
     except ValueError:
         raise HTTPException(422, f"日期格式错误: {date}")
-    if d.weekday() == 5:
-        raise HTTPException(422, f"{date} 是周六，晚点名不覆盖周六")
+    if d.weekday() in (4, 5):
+        raise HTTPException(422, f"{date} 是周{'五六'[d.weekday() - 4]}，不点名")
 
     if conn.execute("SELECT 1 FROM student WHERE id = ?", (student_id,)).fetchone() is None:
         raise HTTPException(404, f"学号 {student_id} 不存在")

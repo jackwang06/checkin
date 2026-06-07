@@ -2,10 +2,10 @@
 
 import sqlite3
 
-DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sun"]
+DAY_KEYS = ["mon", "tue", "wed", "thu", "sun"]
 DAY_LABELS = {"mon": "周一", "tue": "周二", "wed": "周三",
-              "thu": "周四", "fri": "周五", "sun": "周日"}
-_GRID_SQL_COLS = '"周一","周二","周三","周四","周五","周日"'
+              "thu": "周四", "sun": "周日"}
+_GRID_SQL_COLS = '"周一","周二","周三","周四","周日"'
 
 
 def student_week_rows(conn: sqlite3.Connection, student_id: str,

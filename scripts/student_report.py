@@ -16,7 +16,7 @@ from pathlib import Path
 from _db import PROJECT_ROOT, connect
 from sql import format_table
 
-GRID_COLS = ["term", "week_no", "周一", "周二", "周三", "周四", "周五", "周日"]
+GRID_COLS = ["term", "week_no", "周一", "周二", "周三", "周四", "周日"]
 
 
 def week_range(v: str) -> int:

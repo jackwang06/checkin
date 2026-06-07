@@ -29,7 +29,6 @@ export type WeekGridRow = {
   tue: Status | null
   wed: Status | null
   thu: Status | null
-  fri: Status | null
   sun: Status | null
 }
 

@@ -1,7 +1,7 @@
 """已批假条 → 考勤写入（共享模块：CLI seed_week 和 Web 后端共用，单一真相源）。
 
 核心语义（与计划文档一致）：
-  - 枚举假条区间内的考勤日（周一~五+周日，跳周六）
+  - 枚举假条区间内的考勤日（周一~四+周日，跳周五/周六）
   - 只写「已开周」的日期（week 表能定位到的）；未开周日期留给将来开周时回填
   - 覆盖规则：审批是显式管理动作，直接覆盖原状态；原状态非「无异常」时记入 overwritten 报告
   - applied_dates 记录每张假条实际写入过的日期（JSON 数组），幂等去重 + 撤销依据
@@ -12,11 +12,11 @@ from datetime import date, timedelta
 
 
 def leave_dates(start_date: str, end_date: str) -> list[str]:
-    """假条区间内的考勤日（跳周六）。"""
+    """假条区间内的考勤日（跳周五、周六）。"""
     d0, d1 = date.fromisoformat(start_date), date.fromisoformat(end_date)
     out, d = [], d0
     while d <= d1:
-        if d.weekday() != 5:  # 5 = 周六
+        if d.weekday() not in (4, 5):  # 4=周五 5=周六 不点名
             out.append(d.isoformat())
         d += timedelta(days=1)
     return out

@@ -11,7 +11,7 @@ import { cn } from '@/lib/cn'
 const DAY_COLS: { key: keyof WeekGridRow; label: string }[] = [
   { key: 'mon', label: '周一' }, { key: 'tue', label: '周二' },
   { key: 'wed', label: '周三' }, { key: 'thu', label: '周四' },
-  { key: 'fri', label: '周五' }, { key: 'sun', label: '周日' },
+  { key: 'sun', label: '周日' },
 ]
 
 export function StudentLookupPage() {

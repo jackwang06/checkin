@@ -22,7 +22,7 @@ import { useAuthStore } from '@/stores/authStore'
 const DAY_COLS: { key: keyof WeekGridRow; label: string }[] = [
   { key: 'mon', label: '周一' }, { key: 'tue', label: '周二' },
   { key: 'wed', label: '周三' }, { key: 'thu', label: '周四' },
-  { key: 'fri', label: '周五' }, { key: 'sun', label: '周日' },
+  { key: 'sun', label: '周日' },
 ]
 
 export function MyAttendancePage() {
@@ -82,7 +82,7 @@ export function MyAttendancePage() {
                     ))}
                   </tbody>
                 </table>
-                <p className="mt-2 text-xs text-fg-faint">· 表示无异常；无周六晚点名</p>
+                <p className="mt-2 text-xs text-fg-faint">· 表示无异常；周五、周六无晚点名</p>
               </div>
             )}
             {att.data && att.data.abnormal.length > 0 && (
@@ -257,7 +257,7 @@ function LeaveForm() {
           {submit.isPending ? '提交中…' : '提交申请'}
         </Button>
         <p className="text-xs text-fg-faint">
-          批准后将自动写入对应日期的考勤记录（周六无晚点名）。
+          批准后将自动写入对应日期的考勤记录（周五、周六无晚点名）。
         </p>
       </CardContent>
     </Card>
