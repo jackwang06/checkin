@@ -42,6 +42,50 @@ def describe_change(old: dict, new: dict) -> str:
     return "+".join(kinds)
 
 
+def do_transfer(conn, student_id: str, to_class_full_name: str, eff_date: str) -> dict:
+    """执行学籍变动。调用方负责事务边界。出错抛 ValueError。"""
+    stu = conn.execute(
+        "SELECT id, name, class_id, status, enrolled_at FROM student WHERE id = ?",
+        (student_id,),
+    ).fetchone()
+    if stu is None:
+        raise ValueError(f"学号 {student_id} 不存在")
+    sid, sname, old_class_id, sstatus, enrolled_at = stu
+
+    old = class_info(conn, "c.id = ?", old_class_id)
+    new = class_info(conn, "c.full_name = ?", to_class_full_name.strip())
+    if new is None:
+        raise ValueError(f"班级 {to_class_full_name!r} 不存在")
+    if new["id"] == old["id"]:
+        raise ValueError(f"该生已在 {new['full_name']}，无需变动")
+
+    has_history = conn.execute(
+        "SELECT 1 FROM student_class_history WHERE student_id = ? LIMIT 1", (sid,)
+    ).fetchone()
+    if not has_history:
+        conn.execute(
+            "INSERT INTO student_class_history (student_id, class_id, from_date, to_date) "
+            "VALUES (?, ?, ?, ?)",
+            (sid, old["id"], enrolled_at or "", eff_date),
+        )
+    else:
+        conn.execute(
+            "UPDATE student_class_history SET to_date = ? "
+            "WHERE student_id = ? AND to_date IS NULL",
+            (eff_date, sid),
+        )
+    conn.execute(
+        "INSERT INTO student_class_history (student_id, class_id, from_date, to_date) "
+        "VALUES (?, ?, ?, NULL)",
+        (sid, new["id"], eff_date),
+    )
+    conn.execute("UPDATE student SET class_id = ? WHERE id = ?", (new["id"], sid))
+
+    return {"student_id": sid, "name": sname, "student_status": sstatus,
+            "kind": describe_change(old, new), "from": old, "to": new,
+            "date": eff_date}
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -63,55 +107,19 @@ def main() -> None:
         if not (args.student_id and args.to):
             ap.error("需要 <学号> 和 --to <班级全名>（或用 --list-classes 查看班级）")
 
-        stu = conn.execute(
-            "SELECT id, name, class_id, status, enrolled_at FROM student WHERE id = ?",
-            (args.student_id,),
-        ).fetchone()
-        if stu is None:
-            raise SystemExit(f"✗ 学号 {args.student_id} 不存在")
-        sid, sname, old_class_id, sstatus, enrolled_at = stu
-        if sstatus != "active":
-            print(f"警告: 该生当前状态为 {sstatus}（非在读），仍继续执行", file=sys.stderr)
+        try:
+            with conn:
+                r = do_transfer(conn, args.student_id, args.to, args.date)
+        except ValueError as e:
+            raise SystemExit(f"✗ {e}（--list-classes 查看全部班级）")
 
-        old = class_info(conn, "c.id = ?", old_class_id)
-        new = class_info(conn, "c.full_name = ?", args.to.strip())
-        if new is None:
-            raise SystemExit(f"✗ 班级 {args.to!r} 不存在（--list-classes 查看全部；"
-                             f"目标班级还没建的话，先在名单 xlsx 加一行该班学生走 enroll 流程，"
-                             f"或手动 INSERT class）")
-        if new["id"] == old["id"]:
-            raise SystemExit(f"该生已在 {new['full_name']}，无需变动")
-
-        with conn:
-            # 首次变动：补录原班级历史区间（入学日 ~ 变动日）
-            has_history = conn.execute(
-                "SELECT 1 FROM student_class_history WHERE student_id = ? LIMIT 1", (sid,)
-            ).fetchone()
-            if not has_history:
-                conn.execute(
-                    "INSERT INTO student_class_history (student_id, class_id, from_date, to_date) "
-                    "VALUES (?, ?, ?, ?)",
-                    (sid, old["id"], enrolled_at or "", args.date),
-                )
-            else:
-                conn.execute(
-                    "UPDATE student_class_history SET to_date = ? "
-                    "WHERE student_id = ? AND to_date IS NULL",
-                    (args.date, sid),
-                )
-            conn.execute(
-                "INSERT INTO student_class_history (student_id, class_id, from_date, to_date) "
-                "VALUES (?, ?, ?, NULL)",
-                (sid, new["id"], args.date),
-            )
-            conn.execute("UPDATE student SET class_id = ? WHERE id = ?", (new["id"], sid))
-
-        kind = describe_change(old, new)
-        print(f"✓ [{kind}] {sname}({sid}): {old['full_name']} → {new['full_name']}，"
-              f"生效 {args.date}")
-        if old["grade"] != new["grade"]:
-            print(f"  年级 {old['grade']} → {new['grade']}；该生历史考勤保留，"
-                  f"统计口径自 {args.date} 起按新班级归属")
+        if r["student_status"] != "active":
+            print(f"警告: 该生当前状态为 {r['student_status']}（非在读）", file=sys.stderr)
+        print(f"✓ [{r['kind']}] {r['name']}({r['student_id']}): "
+              f"{r['from']['full_name']} → {r['to']['full_name']}，生效 {r['date']}")
+        if r["from"]["grade"] != r["to"]["grade"]:
+            print(f"  年级 {r['from']['grade']} → {r['to']['grade']}；该生历史考勤保留，"
+                  f"统计口径自 {r['date']} 起按新班级归属")
     finally:
         conn.close()
 

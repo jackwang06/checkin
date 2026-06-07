@@ -1,6 +1,24 @@
-# 晚点名考勤数据库
+# 晚点名考勤系统
 
-SQLite 单文件库，层级：**周（时间轴）→ 年级 → 专业 → 班级 → 学号 → 日考勤**。
+SQLite 数据层 + CLI 工具 + **Web 应用**（FastAPI 后端 + React/Notion 风格前端），
+生产地址 <https://checkin.selab.top>（Cloudflare Tunnel → huawei2）。
+
+层级：**周（时间轴）→ 年级 → 专业 → 班级 → 学号 → 日考勤**。
+
+## Web 应用
+
+- **角色**：学生（看自己考勤、交假条）/ 管理员（记考勤、批假条、统计、导出、学籍）/ 超管（+管理员任免、年级删除）。无游客，学生初始密码=学号（首登强制改密）。
+- **后端** `backend/`：FastAPI + 标准库 sqlite3，uvicorn 127.0.0.1:8002（systemd `checkin-backend.service`）。所有写操作经 `audit_log` 同事务留痕。
+- **前端** `frontend/`：React18+Vite+TS+Tailwind+shadcn/ui，nginx 服 `frontend/dist`（loopback :8481 ← cloudflared）。
+- **本地开发**：
+  ```bash
+  cp backend/.env.example backend/.env   # 填 JWT_SECRET / SUPERADMIN_*
+  uv run uvicorn app.main:app --app-dir backend --port 8002 --reload
+  cd frontend && pnpm install && pnpm dev   # :5173，/api 自动代理到 8002
+  ```
+- **服务器更新**：`./deploy.sh`（git pull → uv sync → 迁移 → 重启后端 → 健康检查 → 前端构建）
+- **学生账号初始化**：`uv run python scripts/seed_users.py`（幂等；新名单导入后重跑补账号）
+- **假条语义**：批准时写考勤（跳周六）；未开周日期挂起，开周时自动回填；改判驳回自动还原。
 
 - 日考勤覆盖 **周一~周五 + 周日**（无周六），每生每天一行，全量存储
 - 每日状态**有且仅有 5 种**：`无异常`（默认）/ `公假` / `事假` / `旷到` / `失联`

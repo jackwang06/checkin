@@ -1,0 +1,281 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600&display=swap');
+
+@import './tokens.css';
+@import './prose-claude.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   shadcn variable bridge → tokens.css 单一色源
+   ----------------------------------------------------------------------------
+   shadcn (new-york / stone) 期望 colors 以 hsl(var(--xxx)) 形式被 Tailwind
+   消费，因此这里给出 HSL 形式的桥接变量。值由 tokens.css 中 hex 手算
+   推导：
+     #FFFFFF → 0 0% 100%
+     #37352F → 40 9% 20%       (text)
+     #787774 → 43 3% 46%       (text-muted)
+     #9B9A97 → 40 2% 60%       (text-faint)
+     #F7F6F3 → 40 22% 96%      (bg-subtle)
+     #EDECE9 → 40 11% 92%      (border)
+     #DCDAD4 → 42 12% 84%      (line-strong)
+     #E03E3E → 0 73% 56%       (cat-research → destructive)
+   ========================================================================== */
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 40 9% 20%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 40 9% 20%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 40 9% 20%;
+
+    --primary: 40 9% 20%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 40 22% 96%;
+    --secondary-foreground: 40 9% 20%;
+
+    --muted: 40 22% 96%;
+    --muted-foreground: 43 3% 46%;
+
+    --accent: 40 22% 96%;
+    --accent-foreground: 40 9% 20%;
+
+    --destructive: 0 73% 56%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 11% 92%;
+    --input: 40 11% 92%;
+    --ring: 43 3% 46%;
+
+    --radius: 0.5rem; /* 8px == --radius-md */
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* shadcn-add 默认会写一个 *,*::before,*::after { border-color: var(--border) }
+     的 base reset；这里同步加，确保 shadcn 组件 border 颜色生效。 */
+  * {
+    @apply border-border;
+  }
+
+  /* Suppress the blinking typing caret everywhere by default. Read-only
+     headings / paragraphs / cards can still pick up a focus caret in some
+     browsers (Caret Browsing mode, or a focusable scrollable child like a
+     <pre overflow:auto>); we don't want a vertical bar flashing on text the
+     user can't edit. Re-enable for real inputs further down. */
+  html {
+    caret-color: transparent;
+  }
+  input,
+  textarea,
+  [contenteditable='true'],
+  [contenteditable='plaintext-only'],
+  .cm-content {
+    caret-color: auto;
+  }
+}
+
+/* ==========================================================================
+   Login brand panel — note card stack (R5+)
+   ----------------------------------------------------------------------------
+   每张卡片用 CSS 变量驱动 transform，hover 时只覆盖 --card-y 与 --card-rot，
+   让 transition 在 transform 通道平滑插值；入场仅淡入，避免与 hover 抢通道。
+   ========================================================================== */
+.note-stack-card {
+  transform: translate(var(--card-x, -50%), var(--card-y, 0px)) rotate(var(--card-rot, 0deg));
+  transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: note-card-in 600ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.note-stack-card:hover {
+  --card-y: -8px;
+  --card-rot: 0deg;
+  z-index: 10;
+}
+
+@keyframes note-card-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-stack-card {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ==========================================================================
+   Schools page (/schools) — page-scoped pseudo-elements & scrollbar
+   ----------------------------------------------------------------------------
+   These rules are page-specific; the rest of the page is built with Tailwind
+   utilities + tokens.css variables. Only things hard or noisy to express in
+   pure Tailwind live here:
+     - active-tab underlines (::after) for group tabs + drawer tabs
+     - timeline track + dots (::before) for trace tab
+     - table row hover bg + negative-row red wash (hover-state coupling)
+     - thin scrollbar for the table & drawer body
+   ========================================================================== */
+
+/* group tab underline */
+.schools-grp-tab[data-on]::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--color-text);
+  border-radius: 1px;
+}
+
+/* drawer tab underline */
+.schools-dr-tab[data-on]::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--color-text);
+  border-radius: 1px;
+}
+
+/* table row hover + negative wash */
+.schools-tbl-row:hover .schools-tbl-cell {
+  background: var(--color-bg-subtle);
+}
+.schools-tbl-row-neg .schools-tbl-cell {
+  background: var(--row-neg-bg);
+}
+.schools-tbl-row-neg:hover .schools-tbl-cell {
+  background: var(--row-neg-hover-bg);
+}
+
+/* trace timeline track + dots */
+.schools-trace-line::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--color-border);
+}
+.schools-trace-row::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 14px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 2px solid var(--line-strong);
+}
+.schools-trace-row[data-final]::before {
+  border-color: var(--cat-tools);
+}
+
+/* thin scrollbar */
+.schools-tbl-wrap::-webkit-scrollbar,
+.schools-dr-body::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.schools-tbl-wrap::-webkit-scrollbar-thumb,
+.schools-dr-body::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+.schools-tbl-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--line-strong);
+}
+
+/* ==========================================================================
+   CCF conferences page (/conferences) — page-scoped pseudo-elements
+   ----------------------------------------------------------------------------
+   Same approach as the schools block: the page is Tailwind + tokens.css, only
+   the hover-coupled / pseudo-element bits live here.
+     - table row hover bg + "即将截稿" amber row wash (hover-state coupling)
+     - timeline dots (::before) tinted by status
+     - thin scrollbar for the table
+   ========================================================================== */
+
+/* table row hover + "soon" amber wash */
+.conf-tbl-row:hover .conf-tbl-cell {
+  background: var(--color-bg-subtle);
+}
+.conf-tbl-row-soon .conf-tbl-cell {
+  background: rgba(217, 115, 13, 0.05);
+}
+.conf-tbl-row-soon:hover .conf-tbl-cell {
+  background: rgba(217, 115, 13, 0.09);
+}
+
+/* timeline dots on the month track */
+.conf-tl-item::before {
+  content: '';
+  position: absolute;
+  left: -22px;
+  top: 18px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 2px solid var(--line-strong);
+}
+.conf-tl-item[data-status='soon']::before {
+  border-color: var(--cat-course);
+}
+.conf-tl-item[data-status='open']::before {
+  border-color: var(--cat-tools);
+}
+.conf-tl-item[data-status='closed']::before {
+  border-color: var(--color-border);
+  background: var(--color-bg-subtle);
+}
+
+/* thin scrollbar for the table */
+.conf-tbl-wrap::-webkit-scrollbar {
+  height: 8px;
+}
+.conf-tbl-wrap::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 4px;
+}
+.conf-tbl-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--line-strong);
+}
+
+/* ==========================================================================
+   docx-preview viewer — override render-time injected wrapper styling
+   ----------------------------------------------------------------------------
+   docx-preview 在渲染时往容器内注入一段 <style>，其中 `.docx-wrapper{background:gray}`
+   把页面衬底画成灰色、`section.docx` 带很重的默认阴影。这些是 render-time 注入的
+   局部样式，外部全局 CSS 可覆盖（故意放在 @layer 之外、用 !important 压过注入值），
+   让衬底用我们的暖近白 token、阴影改为轻量卡片阴影，与各 viewer 滚动区 bg-bg-subtle 一致。
+   ========================================================================== */
+.docx-wrapper {
+  background: var(--color-bg-subtle) !important;
+}
+.docx-wrapper > section.docx {
+  /* !important 同 background：docx-preview 的注入 <style> 在文档序中晚于本表、
+     选择器同特异度，不加 !important 会被其重默认阴影压回。 */
+  box-shadow: var(--shadow-card) !important;
+}

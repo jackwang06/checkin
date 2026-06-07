@@ -41,29 +41,72 @@ def grade_counts(conn, grade_name: str) -> dict:
     return dict(zip(("id", "status", "classes", "students", "attendance"), row))
 
 
+def graduate_grade(conn, grade_name: str, today: str | None = None) -> dict:
+    """毕业归档。调用方负责事务。已归档时返回 {already: True}。"""
+    info = grade_counts(conn, grade_name)
+    if info["status"] == "archived":
+        return {"already": True, **info}
+    today = today or date.today().isoformat()
+    conn.execute(
+        "UPDATE grade SET status='archived', archived_at=? WHERE id=?",
+        (today, info["id"]),
+    )
+    cur = conn.execute(
+        """
+        UPDATE student SET status='graduated', left_at=?
+        WHERE status='active'
+          AND class_id IN (SELECT id FROM class WHERE grade_id=?)
+        """,
+        (today, info["id"]),
+    )
+    return {"already": False, "graduated": cur.rowcount, **info}
+
+
+def remove_grade(conn, grade_name: str) -> dict:
+    """物理删除年级及其全部数据。调用方负责事务和确认。"""
+    info = grade_counts(conn, grade_name)
+    # 先清理 Web 层引用（账号/假条），再删数据层
+    conn.execute(
+        "DELETE FROM leave_request WHERE student_id IN "
+        "(SELECT s.id FROM student s JOIN class c ON c.id=s.class_id WHERE c.grade_id=?)",
+        (info["id"],),
+    )
+    conn.execute(
+        "DELETE FROM users WHERE student_id IN "
+        "(SELECT s.id FROM student s JOIN class c ON c.id=s.class_id WHERE c.grade_id=?) "
+        "AND role = 'user'",
+        (info["id"],),
+    )
+    conn.execute(
+        "DELETE FROM attendance WHERE student_id IN "
+        "(SELECT s.id FROM student s JOIN class c ON c.id=s.class_id WHERE c.grade_id=?)",
+        (info["id"],),
+    )
+    conn.execute(
+        "DELETE FROM student_class_history WHERE class_id IN "
+        "(SELECT id FROM class WHERE grade_id=?) OR student_id IN "
+        "(SELECT s.id FROM student s JOIN class c ON c.id=s.class_id WHERE c.grade_id=?)",
+        (info["id"], info["id"]),
+    )
+    conn.execute(
+        "DELETE FROM student WHERE class_id IN (SELECT id FROM class WHERE grade_id=?)",
+        (info["id"],),
+    )
+    conn.execute("DELETE FROM class WHERE grade_id=?", (info["id"],))
+    conn.execute("DELETE FROM grade WHERE id=?", (info["id"],))
+    return info
+
+
 def cmd_graduate(args) -> None:
     conn = connect()
     try:
-        info = grade_counts(conn, args.grade)
-        if info["status"] == "archived":
+        with conn:
+            r = graduate_grade(conn, args.grade)
+        if r["already"]:
             print(f"年级 {args.grade} 已是归档状态，无需重复操作")
             return
-        today = date.today().isoformat()
-        with conn:
-            conn.execute(
-                "UPDATE grade SET status='archived', archived_at=? WHERE id=?",
-                (today, info["id"]),
-            )
-            cur = conn.execute(
-                """
-                UPDATE student SET status='graduated', left_at=?
-                WHERE status='active'
-                  AND class_id IN (SELECT id FROM class WHERE grade_id=?)
-                """,
-                (today, info["id"]),
-            )
-        print(f"✓ 年级 {args.grade} 已毕业归档：{cur.rowcount} 名在读学生标记为 graduated，"
-              f"{info['attendance']} 行历史考勤保留")
+        print(f"✓ 年级 {args.grade} 已毕业归档：{r['graduated']} 名在读学生标记为 graduated，"
+              f"{r['attendance']} 行历史考勤保留")
         print("  此后 seed_week 不再为该年级预填，统计视图自动排除；"
               "如需恢复：UPDATE grade SET status='active' ... + UPDATE student SET status='active' ...")
     finally:
@@ -75,28 +118,12 @@ def cmd_remove(args) -> None:
     try:
         info = grade_counts(conn, args.grade)
         print(f"年级 {args.grade}（{info['status']}）将删除：班级 {info['classes']} 个、"
-              f"学生 {info['students']} 人、考勤 {info['attendance']} 行、及其学籍历史")
+              f"学生 {info['students']} 人、考勤 {info['attendance']} 行、及其学籍历史/账号/假条")
         if not args.yes:
             print("（试运行，未删除。确认请加 --yes；删除不可恢复，建议先备份 data/checkin.db）")
             return
         with conn:
-            conn.execute(
-                "DELETE FROM attendance WHERE student_id IN "
-                "(SELECT s.id FROM student s JOIN class c ON c.id=s.class_id WHERE c.grade_id=?)",
-                (info["id"],),
-            )
-            conn.execute(
-                "DELETE FROM student_class_history WHERE class_id IN "
-                "(SELECT id FROM class WHERE grade_id=?) OR student_id IN "
-                "(SELECT s.id FROM student s JOIN class c ON c.id=s.class_id WHERE c.grade_id=?)",
-                (info["id"], info["id"]),
-            )
-            conn.execute(
-                "DELETE FROM student WHERE class_id IN (SELECT id FROM class WHERE grade_id=?)",
-                (info["id"],),
-            )
-            conn.execute("DELETE FROM class WHERE grade_id=?", (info["id"],))
-            conn.execute("DELETE FROM grade WHERE id=?", (info["id"],))
+            remove_grade(conn, args.grade)
         print(f"✓ 年级 {args.grade} 已彻底删除")
     finally:
         conn.close()

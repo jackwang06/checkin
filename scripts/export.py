@@ -29,22 +29,23 @@ LONG_COLS = ["term", "week_no", "date", "grade", "major", "class_name",
              "student_id", "student_name", "status", "reason", "return_date"]
 
 
-def build_query(args) -> tuple[str, list]:
+def build_query(grade: str | None, class_: str | None, term: str | None,
+                week_no: int | None) -> tuple[str, list]:
     where, params = [], []
-    if args.grade:
+    if grade:
         where.append("grade = ?")
-        params.append(args.grade)
-    if getattr(args, "class_"):
+        params.append(grade)
+    if class_:
         where.append("class_name = ?")
-        params.append(args.class_)
-    if args.term:
+        params.append(class_)
+    if term:
         where.append("term = ?")
-        params.append(args.term)
-    if args.week_no is not None:
+        params.append(term)
+    if week_no is not None:
         where.append("week_no = ?")
-        params.append(args.week_no)
+        params.append(week_no)
     cond = (" WHERE " + " AND ".join(where)) if where else ""
-    if args.week_no is not None:  # 宽表（某周二维）
+    if week_no is not None:        # 宽表（某周二维）
         sql = (f"SELECT {', '.join(GRID_COLS)} FROM v_week_grid{cond} "
                f"ORDER BY grade, major, class_name, student_id")
     else:                          # 长表（跨周明细）
@@ -82,7 +83,7 @@ def main() -> None:
         else:
             raise SystemExit(f"✗ 带 --week-no 必须指定 --term（库中存在学期: {terms}）")
 
-    sql, params = build_query(args)
+    sql, params = build_query(args.grade, args.class_, args.term, args.week_no)
     conn = connect()
     try:
         cur = conn.execute(sql, params)

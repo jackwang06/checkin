@@ -10,3 +10,11 @@ exports/
 __pycache__/
 *.pyc
 .venv/
+backend/.env
+data/uploads/
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+frontend/.pnpm-store/
+*.png

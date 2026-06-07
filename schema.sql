@@ -224,6 +224,74 @@ FROM v_att_enriched
 WHERE grade_status = 'active' AND student_status = 'active'
 GROUP BY week_id;
 
+-- ============================================================
+-- Web 应用层（账号 / 假条 / 审计）
+-- ============================================================
+
+-- 登录账号：学生(role=user, student_id 指向本人) / 管理员 / 超管
+CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,               -- 学号 或 admin_xxx（全局唯一登录标识）
+    password_hash TEXT NOT NULL,
+    role          TEXT NOT NULL DEFAULT 'user'
+                  CHECK (role IN ('user', 'admin', 'superadmin')),
+    display_name  TEXT,
+    student_id    TEXT REFERENCES student (id),   -- 学生账号指向本人；纯管理员为 NULL
+    must_change_password INTEGER NOT NULL DEFAULT 0
+                  CHECK (must_change_password IN (0, 1)),
+    created_at    TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    last_login_at TEXT
+) STRICT;
+-- 一个学生最多一个账号
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_student ON users (student_id)
+    WHERE student_id IS NOT NULL;
+
+-- 登录审计（含失败记录，应用层限速依据）
+CREATE TABLE IF NOT EXISTS login_event (
+    id         INTEGER PRIMARY KEY,
+    user_id    TEXT,                              -- 失败时可能是不存在的账号，不设 FK
+    success    INTEGER NOT NULL DEFAULT 1 CHECK (success IN (0, 1)),
+    ip         TEXT,
+    user_agent TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+) STRICT;
+CREATE INDEX IF NOT EXISTS idx_login_event_user ON login_event (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_login_event_ip   ON login_event (ip, created_at);
+
+-- 假条：学生申请 → 管理员审批 → 自动写考勤
+CREATE TABLE IF NOT EXISTS leave_request (
+    id          INTEGER PRIMARY KEY,
+    student_id  TEXT NOT NULL REFERENCES student (id),
+    type        TEXT NOT NULL CHECK (type IN ('事假', '公假')),
+    start_date  TEXT NOT NULL CHECK (start_date LIKE '____-__-__'),
+    end_date    TEXT NOT NULL CHECK (end_date   LIKE '____-__-__'),
+    reason      TEXT NOT NULL,
+    return_date TEXT,                             -- 预计返校日 → 写进 attendance.return_date
+    attachment_path TEXT,                         -- 证明材料（data/uploads/ 下相对路径）
+    status      TEXT NOT NULL DEFAULT 'pending'
+                CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled')),
+    reviewed_by    TEXT REFERENCES users (id),
+    reviewed_at    TEXT,
+    review_comment TEXT,
+    applied_dates  TEXT,                          -- 审批实际写入的日期 JSON 数组（审计+撤销依据）
+    created_at  TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+    CHECK (end_date >= start_date)
+) STRICT;
+CREATE INDEX IF NOT EXISTS idx_leave_student ON leave_request (student_id, status);
+CREATE INDEX IF NOT EXISTS idx_leave_status  ON leave_request (status, created_at);
+
+-- 审计日志：所有写操作留痕（与业务写同一事务，业务回滚则日志回滚）
+CREATE TABLE IF NOT EXISTS audit_log (
+    id         INTEGER PRIMARY KEY,
+    user_id    TEXT NOT NULL REFERENCES users (id),
+    action     TEXT NOT NULL,                     -- attendance.update / leave.approve / week.create / ...
+    target     TEXT,                              -- 如 '20231303001:2026-06-02' 或 'leave:5'
+    detail     TEXT,                              -- JSON：变更前→后值 / 参数 / skipped 等
+    ip         TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
+) STRICT;
+CREATE INDEX IF NOT EXISTS idx_audit_user   ON audit_log (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_audit_action ON audit_log (action, created_at);
+
 -- ------------------------------------------------------------
 -- 自检视图：期望均为 0 行（提交前跑一遍）
 -- ------------------------------------------------------------
