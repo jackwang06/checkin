@@ -2,7 +2,7 @@
   "miniprogramRoot": "./dist",
   "projectname": "miniapp",
   "description": "晚点名小程序",
-  "appid": "touristappid",
+  "appid": "wxce1a2ed61a5e67c6",
   "setting": {
     "urlCheck": true,
     "es6": false,
