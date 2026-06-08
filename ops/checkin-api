@@ -1,0 +1,26 @@
+# checkin-api.winbeau.top —— 直连公网 HTTPS（不走 Cloudflare），供微信小程序调用 API。
+# DNS（腾讯云）已解析到 huawei2 公网 124.71.228.242；80/443 安全组已放行。
+# 部署：cp 到 /etc/nginx/sites-available/checkin-api && ln -s 到 sites-enabled
+#       sudo certbot --nginx -d checkin-api.winbeau.top  （自动加 443 ssl + 续期）
+# 顺带也把 web 端通过此域名提供（root 指向 frontend/dist），多一条非 CF 的访问路径。
+server {
+    listen 80;
+    server_name checkin-api.winbeau.top;
+    client_max_body_size 20m;
+
+    root /home/winbeau/projects/checkin/frontend/dist;
+    index index.html;
+
+    location /api {
+        proxy_pass http://127.0.0.1:8002;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        try_files $uri /index.html;
+    }
+}
