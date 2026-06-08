@@ -21,16 +21,18 @@ export default function LeaveNew() {
   const [busy, setBusy] = useState(false)
 
   const chooseFile = () => {
-    Taro.showActionSheet({ itemList: ['从相册/拍照选图片', '选择聊天文件(PDF)'] }).then((r) => {
+    Taro.showActionSheet({ itemList: ['从相册 / 拍照', '从聊天文件（图片或文件）'] }).then((r) => {
       if (r.tapIndex === 0) {
         Taro.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'] })
           .then((res) => setFilePath(res.tempFilePaths[0]))
+          .catch(() => {})
       } else {
-        Taro.chooseMessageFile({ count: 1, type: 'file', extension: ['pdf', 'jpg', 'jpeg', 'png'] })
+        // type:'all' —— 聊天里的图片和文件都可选（不再只限 PDF），后端仍只收 jpg/png/pdf
+        Taro.chooseMessageFile({ count: 1, type: 'all' })
           .then((res) => setFilePath(res.tempFiles[0].path))
           .catch(() => {})
       }
-    })
+    }).catch(() => {})
   }
 
   const submit = async () => {
