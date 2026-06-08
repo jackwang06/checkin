@@ -5,11 +5,11 @@
   "appid": "wxce1a2ed61a5e67c6",
   "setting": {
     "urlCheck": true,
-    "es6": false,
-    "enhance": false,
+    "es6": true,
+    "enhance": true,
     "compileHotReLoad": false,
-    "postcss": false,
-    "minified": false
+    "postcss": true,
+    "minified": true
   },
   "compileType": "miniprogram"
 }
