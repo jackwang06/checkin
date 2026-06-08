@@ -21,14 +21,19 @@ export default function LeaveNew() {
   const [busy, setBusy] = useState(false)
 
   const chooseFile = () => {
-    Taro.showActionSheet({ itemList: ['从相册 / 拍照', '从聊天文件（图片或文件）'] }).then((r) => {
+    Taro.showActionSheet({ itemList: ['拍照 / 手机相册', '聊天记录里的图片', '聊天记录里的文件'] }).then((r) => {
       if (r.tapIndex === 0) {
         Taro.chooseImage({ count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'] })
           .then((res) => setFilePath(res.tempFilePaths[0]))
           .catch(() => {})
+      } else if (r.tapIndex === 1) {
+        // 聊天图片（相册式）
+        Taro.chooseMessageFile({ count: 1, type: 'image' })
+          .then((res) => setFilePath(res.tempFiles[0].path))
+          .catch(() => {})
       } else {
-        // type:'all' —— 聊天里的图片和文件都可选（不再只限 PDF），后端仍只收 jpg/png/pdf
-        Taro.chooseMessageFile({ count: 1, type: 'all' })
+        // 聊天文件（瀑布聊天记录列表，全部文件类型；后端仍只收 jpg/png/pdf）
+        Taro.chooseMessageFile({ count: 1, type: 'file' })
           .then((res) => setFilePath(res.tempFiles[0].path))
           .catch(() => {})
       }
