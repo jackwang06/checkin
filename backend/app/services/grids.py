@@ -40,7 +40,8 @@ def student_week_rows(conn: sqlite3.Connection, student_id: str,
 
 def abnormal_rows(conn: sqlite3.Connection, student_id: str,
                   term: str | None = None) -> list[dict]:
-    where, params = ["student_id = ?", "status <> '无异常'"], [student_id]
+    # 异常明细：排除「无异常」与系统状态「节假日」
+    where, params = ["student_id = ?", "status NOT IN ('无异常', '节假日')"], [student_id]
     if term:
         where.append("term = ?")
         params.append(term)

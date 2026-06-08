@@ -89,12 +89,12 @@ export function StudentLookupPage() {
               const cols = visibleDayCols(report.data.grid)
               return (
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full table-fixed min-w-[34rem] text-sm">
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-fg-muted">
-                    <th className="py-2 pr-3 font-medium">周次</th>
+                    <th className="w-20 py-2 pr-3 font-medium">周次</th>
                     {cols.map((d) => (
-                      <th key={d.key} className="px-2 py-2 font-medium">{d.label}</th>
+                      <th key={d.key} className="px-2 py-2 text-center font-medium">{d.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -102,11 +102,11 @@ export function StudentLookupPage() {
                   {report.data.grid.map((row) => (
                     <tr key={`${row.term}-${row.weekNo}`}
                         className="border-b border-border last:border-0 hover:bg-bg-subtle transition">
-                      <td className="py-2 pr-3 whitespace-nowrap text-fg-muted">
+                      <td className="w-20 py-2 pr-3 whitespace-nowrap text-fg-muted">
                         第 {row.weekNo} 周
                       </td>
                       {cols.map((d) => (
-                        <td key={d.key} className="px-2 py-2">
+                        <td key={d.key} className="px-2 py-2 text-center">
                           <StatusChip status={row[d.key]} muted />
                         </td>
                       ))}

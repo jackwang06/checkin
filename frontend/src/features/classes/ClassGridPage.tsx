@@ -127,7 +127,7 @@ function GridTable({ classId, term, weekNo }: { classId: number; term: string; w
     let n = 0
     for (const r of grid.data?.rows ?? []) {
       for (const c of Object.values(r.days)) {
-        if (c && c.status !== '无异常') n += 1
+        if (c && c.status !== '无异常' && c.status !== '节假日') n += 1
       }
     }
     return n
