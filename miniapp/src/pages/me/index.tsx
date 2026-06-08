@@ -71,7 +71,7 @@ export default function MeAttendance() {
               ))}
             </View>
           ))}
-          <Text className='faint' style={{ fontSize: '22rpx', marginTop: '12rpx', display: 'block' }}>
+          <Text className='faint' style={{ fontSize: '26rpx', marginTop: '12rpx', display: 'block' }}>
             · 表示无异常；周五/六默认不点名
           </Text>
         </View>
@@ -82,9 +82,9 @@ export default function MeAttendance() {
           <Text className='label'>异常明细</Text>
           {abnormal.map((a) => (
             <View key={a.date} className='row' style={{ gap: '12rpx', marginTop: '12rpx' }}>
-              <Text className='muted' style={{ fontSize: '24rpx' }}>{a.date.slice(5)}</Text>
+              <Text className='muted' style={{ fontSize: '28rpx' }}>{a.date.slice(5)}</Text>
               <StatusChip status={a.status} />
-              {a.reason ? <Text className='faint' style={{ fontSize: '22rpx' }}>{a.reason}</Text> : null}
+              {a.reason ? <Text className='faint' style={{ fontSize: '26rpx' }}>{a.reason}</Text> : null}
             </View>
           ))}
         </View>

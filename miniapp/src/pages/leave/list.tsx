@@ -59,7 +59,7 @@ export default function LeaveList() {
     <View className='tabbar-pad'>
       <View className='card row' style={{ justifyContent: 'space-between' }}>
         <Text className='h2'>我的假条</Text>
-        <Button className='btn' style={{ width: 'auto', padding: '12rpx 28rpx', fontSize: '26rpx' }}
+        <Button className='btn' style={{ width: 'auto', padding: '12rpx 28rpx', fontSize: '30rpx' }}
                 onClick={() => Taro.navigateTo({ url: '/pages/leave/new' })}>
           上传假条
         </Button>
@@ -82,18 +82,18 @@ export default function LeaveList() {
             </View>
             <Text className='muted' style={{ display: 'block', marginTop: '12rpx' }}>{l.reason}</Text>
             {l.reviewComment ? (
-              <Text className='faint' style={{ display: 'block', marginTop: '8rpx', fontSize: '24rpx' }}>
+              <Text className='faint' style={{ display: 'block', marginTop: '8rpx', fontSize: '28rpx' }}>
                 审批意见：{l.reviewComment}
               </Text>
             ) : null}
             <View className='row' style={{ gap: '20rpx', marginTop: '16rpx' }}>
               {l.hasAttachment ? (
-                <Text style={{ color: 'var(--link)', fontSize: '26rpx' }} onClick={() => preview(l.id)}>
+                <Text style={{ color: 'var(--link)', fontSize: '30rpx' }} onClick={() => preview(l.id)}>
                   查看证明材料
                 </Text>
               ) : null}
               {l.status === 'pending' ? (
-                <Text style={{ color: 'var(--fg-muted)', fontSize: '26rpx' }} onClick={() => doCancel(l.id)}>
+                <Text style={{ color: 'var(--fg-muted)', fontSize: '30rpx' }} onClick={() => doCancel(l.id)}>
                   撤回
                 </Text>
               ) : null}

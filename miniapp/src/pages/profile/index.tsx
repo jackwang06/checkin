@@ -50,7 +50,7 @@ export default function Profile() {
           <Item title='假条核查' onClick={() => go('/pages/admin/leaves')} />
           <Item title='出勤统计' onClick={() => go('/pages/admin/stats')} />
           <Item title='学生查询 / 重置密码' onClick={() => go('/pages/admin/student')} />
-          <Text className='faint' style={{ fontSize: '22rpx', marginTop: '16rpx', display: 'block' }}>
+          <Text className='faint' style={{ fontSize: '26rpx', marginTop: '16rpx', display: 'block' }}>
             班级周表批量、名单导入/导出、特殊日期、转班、年级、审计等请用网页版。
           </Text>
         </View>

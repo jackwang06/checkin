@@ -85,11 +85,11 @@ export default function AdminStats() {
         <View className='row' style={{ gap: '8rpx', flexWrap: 'wrap', marginBottom: '12rpx' }}>
           {crumbs().map((c, i, arr) => (
             <Text key={c.label} onClick={() => go(c.d)}
-                  style={{ color: i === arr.length - 1 ? 'var(--fg)' : 'var(--link)', fontSize: '26rpx' }}>
+                  style={{ color: i === arr.length - 1 ? 'var(--fg)' : 'var(--link)', fontSize: '30rpx' }}>
               {c.label}{i < arr.length - 1 ? ' ›' : ''}
             </Text>
           ))}
-          <Text className='faint' style={{ fontSize: '22rpx' }}>（点行下钻）</Text>
+          <Text className='faint' style={{ fontSize: '26rpx' }}>（点行下钻）</Text>
         </View>
         {rows.map((r) => (
           <View key={rowName(r)} className='row'
@@ -97,7 +97,7 @@ export default function AdminStats() {
                 onClick={() => onRow(r)}>
             <Text>{rowName(r)}</Text>
             <View className='row' style={{ gap: '18rpx' }}>
-              <Text className='faint' style={{ fontSize: '24rpx' }}>应{r.total}</Text>
+              <Text className='faint' style={{ fontSize: '28rpx' }}>应{r.total}</Text>
               <Text style={{ color: '#0f7b6c' }}>{r.rate}%</Text>
             </View>
           </View>

@@ -87,7 +87,7 @@ export default function LeaveNew() {
       <Button className='btn' style={{ marginTop: '28rpx' }} loading={busy} disabled={busy} onClick={submit}>
         提交
       </Button>
-      <Text className='faint' style={{ display: 'block', marginTop: '16rpx', fontSize: '22rpx' }}>
+      <Text className='faint' style={{ display: 'block', marginTop: '16rpx', fontSize: '26rpx' }}>
         通过核查后将自动写入对应日期考勤（节假日/周五六不点名，自动跳过）。
       </Text>
     </View>

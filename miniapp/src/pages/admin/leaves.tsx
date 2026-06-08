@@ -79,8 +79,8 @@ export default function AdminLeaves() {
       ) : items.map((l) => (
         <View key={l.id} className='card'>
           <View className='row' style={{ gap: '12rpx', flexWrap: 'wrap' }}>
-            <Text className='h2' style={{ fontSize: '30rpx' }}>{l.studentName}</Text>
-            <Text className='faint' style={{ fontSize: '22rpx' }}>{l.studentId}</Text>
+            <Text className='h2' style={{ fontSize: '34rpx' }}>{l.studentName}</Text>
+            <Text className='faint' style={{ fontSize: '26rpx' }}>{l.studentId}</Text>
             <StatusChip status={l.type} />
           </View>
           <Text className='muted' style={{ display: 'block', marginTop: '8rpx' }}>{l.className}</Text>
@@ -94,12 +94,12 @@ export default function AdminLeaves() {
           ) : null}
           {l.status === 'pending' ? (
             <View className='row' style={{ gap: '16rpx', marginTop: '18rpx' }}>
-              <Button className='btn' style={{ flex: 1, fontSize: '28rpx', padding: '16rpx' }}
+              <Button className='btn' style={{ flex: 1, fontSize: '32rpx', padding: '16rpx' }}
                       onClick={() => review(l, 'approved')}>批准</Button>
               <Button className='btn-outline' style={{ flex: 1 }} onClick={() => review(l, 'rejected')}>驳回</Button>
             </View>
           ) : (
-            <Text className='faint' style={{ display: 'block', marginTop: '10rpx', fontSize: '22rpx' }}>
+            <Text className='faint' style={{ display: 'block', marginTop: '10rpx', fontSize: '26rpx' }}>
               {l.reviewedBy ? `${l.reviewedBy} 审批` : ''}{l.reviewComment ? ` · ${l.reviewComment}` : ''}
             </Text>
           )}

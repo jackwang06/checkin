@@ -9,7 +9,7 @@ page {
   --link: #2383e2;
   background: var(--bg-subtle);
   color: var(--fg);
-  font-size: 28rpx;
+  font-size: 32rpx;
   font-family: -apple-system, "PingFang SC", sans-serif;
 }
 
@@ -28,7 +28,7 @@ page {
   align-items: center;
   border-radius: 10rpx;
   padding: 4rpx 14rpx;
-  font-size: 24rpx;
+  font-size: 28rpx;
 }
 .btn {
   background: var(--fg);
@@ -36,7 +36,7 @@ page {
   border-radius: 12rpx;
   text-align: center;
   padding: 22rpx;
-  font-size: 30rpx;
+  font-size: 34rpx;
 }
 .btn[disabled] { opacity: 0.5; }
 .btn-outline {
@@ -52,10 +52,10 @@ page {
   border-radius: 12rpx;
   padding: 18rpx 22rpx;
   background: var(--bg);
-  font-size: 28rpx;
+  font-size: 32rpx;
 }
-.label { font-size: 26rpx; color: var(--fg-muted); margin-bottom: 10rpx; display: block; }
-.h1 { font-size: 38rpx; font-weight: 600; }
-.h2 { font-size: 32rpx; font-weight: 600; }
+.label { font-size: 30rpx; color: var(--fg-muted); margin-bottom: 10rpx; display: block; }
+.h1 { font-size: 42rpx; font-weight: 600; }
+.h2 { font-size: 36rpx; font-weight: 600; }
 /* tab 页底部留白：自定义 tabBar 是 fixed 覆盖层，避免最后内容被遮 */
 .tabbar-pad { padding-bottom: calc(150rpx + env(safe-area-inset-bottom)); }
