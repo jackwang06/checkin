@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { View, Image, Text } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import { getUser, isAdmin } from '@/lib/auth'
@@ -22,15 +23,26 @@ const ITEMS: Item[] = [
     icon: require('@/assets/tabbar/me.png'), active: require('@/assets/tabbar/me-active.png') },
 ]
 
+function currentPath(): string {
+  const ps = Taro.getCurrentPages()
+  return ps.length ? `/${ps[ps.length - 1].route}` : '/pages/me/index'
+}
+
 export default function CustomTabBar() {
+  // 自定义 tabBar 是单实例、切页不重挂载；改由各 tab 页 onShow 广播 'tabbar:change' 来驱动高亮。
+  const [cur, setCur] = useState(currentPath())
+  useEffect(() => {
+    const h = (p: string) => setCur(p)
+    Taro.eventCenter.on('tabbar:change', h)
+    return () => Taro.eventCenter.off('tabbar:change', h)
+  }, [])
+
   const admin = isAdmin(getUser())
   const items = ITEMS.filter((it) => !it.adminOnly || admin)
 
-  const pages = Taro.getCurrentPages()
-  const cur = pages.length ? `/${pages[pages.length - 1].route}` : '/pages/me/index'
-
   const onTap = (path: string) => {
     if (path === cur) return
+    setCur(path) // 立即高亮，避免等待 onShow 广播的视觉延迟
     Taro.switchTab({ url: path })
   }
 

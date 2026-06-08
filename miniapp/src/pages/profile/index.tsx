@@ -19,7 +19,10 @@ function Item({ title, onClick }: { title: string; onClick: () => void }) {
 
 export default function Profile() {
   const [user, setUser] = useState<User | null>(getUser())
-  useDidShow(() => { if (guard()) setUser(getUser()) })
+  useDidShow(() => {
+    Taro.eventCenter.trigger('tabbar:change', '/pages/profile/index')
+    if (guard()) setUser(getUser())
+  })
   const admin = isAdmin(user)
 
   const go = (url: string) => Taro.navigateTo({ url })

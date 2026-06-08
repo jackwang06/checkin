@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { View, Text, Picker, Input } from '@tarojs/components'
-import Taro, { useLoad } from '@tarojs/taro'
+import Taro, { useLoad, useDidShow } from '@tarojs/taro'
 import { listClasses, listWeeks, classGrid, patchAttendance } from '@/api/endpoints'
 import type { ClassInfo, Week, ClassGrid, Status } from '@/api/types'
 import { STATUSES, STATUS_STYLE } from '@/lib/status'
@@ -20,6 +20,7 @@ export default function Rollcall() {
   const [loading, setLoading] = useState(false)
   const [query, setQuery] = useState('')
 
+  useDidShow(() => { Taro.eventCenter.trigger('tabbar:change', '/pages/admin/rollcall') })
   useLoad(() => {
     if (!guard()) return
     Promise.all([listClasses(), listWeeks()])

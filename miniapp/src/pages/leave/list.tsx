@@ -19,7 +19,10 @@ export default function LeaveList() {
     catch (e: any) { Taro.showToast({ title: e?.message || '加载失败', icon: 'none' }) }
     finally { setLoading(false) }
   }
-  useDidShow(() => { if (guard()) void load() })
+  useDidShow(() => {
+    Taro.eventCenter.trigger('tabbar:change', '/pages/leave/list')
+    if (guard()) void load()
+  })
   usePullDownRefresh(async () => { await load(); Taro.stopPullDownRefresh() })
 
   const preview = async (id: number) => {

@@ -29,7 +29,10 @@ export default function MeAttendance() {
     }
   }
 
-  useDidShow(() => { if (guard()) void load() })
+  useDidShow(() => {
+    Taro.eventCenter.trigger('tabbar:change', '/pages/me/index')
+    if (guard()) void load()
+  })
   usePullDownRefresh(async () => { await load(); Taro.stopPullDownRefresh() })
 
   const cols = visibleDayCols(grid)
