@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import * as api from '@/api/endpoints'
 import type { Cell, ClassGrid, Status } from '@/api/types'
 import { StatusChip } from '@/components/StatusChip'
+import { DateField } from '@/components/DateField'
 import { STATUSES, STATUS_STYLE } from '@/lib/status'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -283,7 +284,12 @@ function CellButton({
       >
         <StatusChip status={cell?.status} muted />
       </PopoverTrigger>
-      <PopoverContent className="w-64 space-y-2.5" align="center">
+      <PopoverContent className="w-64 space-y-2.5" align="center"
+        onInteractOutside={(e) => {
+          // 嵌套的 DateField 日历在 portal 里，点它不应关闭本格编辑器
+          const t = e.target as HTMLElement | null
+          if (t?.closest('[data-datefield-cal]')) e.preventDefault()
+        }}>
         <div className="flex flex-wrap gap-1.5">
           {STATUSES.map((s) => (
             <button
@@ -309,8 +315,8 @@ function CellButton({
         </div>
         <div className="space-y-1">
           <Label className="text-xs">返校日期</Label>
-          <Input type="date" lang="zh-CN" value={returnDate}
-                 onChange={(e) => setReturnDate(e.target.value)} className="h-8 text-xs" />
+          <DateField value={returnDate} onChange={setReturnDate} placeholder="可不填"
+                     className="h-8 text-xs" />
         </div>
         {cell?.status && cell.status !== '无异常' && (
           <Button variant="outline" size="sm" className="h-7 w-full text-xs"

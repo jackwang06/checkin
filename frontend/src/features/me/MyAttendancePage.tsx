@@ -6,6 +6,7 @@ import * as api from '@/api/endpoints'
 import type { LeaveRequest } from '@/api/types'
 import { StatusChip, TintChip } from '@/components/StatusChip'
 import { AttachmentPreview } from '@/components/AttachmentPreview'
+import { DateField } from '@/components/DateField'
 import { LEAVE_STATUS_LABEL, LEAVE_STATUS_STYLE } from '@/lib/status'
 import { visibleDayCols } from '@/lib/grid'
 import { Button } from '@/components/ui/button'
@@ -226,16 +227,16 @@ function LeaveForm() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>开始日期</Label>
-            <Input type="date" lang="zh-CN" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <DateField value={startDate} onChange={setStartDate} />
           </div>
           <div className="space-y-1.5">
             <Label>结束日期</Label>
-            <Input type="date" lang="zh-CN" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <DateField value={endDate} onChange={setEndDate} />
           </div>
         </div>
         <div className="space-y-1.5">
           <Label>预计返校日（可选）</Label>
-          <Input type="date" lang="zh-CN" value={returnDate} onChange={(e) => setReturnDate(e.target.value)} />
+          <DateField value={returnDate} onChange={setReturnDate} placeholder="可不填" />
         </div>
         <div className="space-y-1.5">
           <Label>事由</Label>
