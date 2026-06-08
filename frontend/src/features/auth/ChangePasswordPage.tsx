@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { KeyRound } from 'lucide-react'
+import { KeyRound, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +16,19 @@ export function ChangePasswordPage() {
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
   const forced = user?.mustChangePassword
+
+  // 非强制改密时：X / 点击遮罩 / Esc 都可关闭返回首页；强制时不可退出
+  const dismiss = () => {
+    if (!forced) navigate('/', { replace: true })
+  }
+  useEffect(() => {
+    if (forced) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') navigate('/', { replace: true })
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [forced, navigate])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,11 +50,19 @@ export function ChangePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg-subtle p-6">
+    <div className="flex min-h-screen items-center justify-center bg-bg-subtle p-6"
+         onClick={dismiss}>
       <form
         onSubmit={submit}
-        className="w-full max-w-sm space-y-5 rounded-lg border border-border bg-bg p-8 shadow-card"
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm space-y-5 rounded-lg border border-border bg-bg p-8 shadow-card"
       >
+        {!forced && (
+          <button type="button" onClick={dismiss} aria-label="关闭"
+                  className="absolute right-3 top-3 rounded-md p-1 text-fg-faint hover:bg-bg-subtle hover:text-text transition">
+            <X size={16} />
+          </button>
+        )}
         <div className="flex items-center gap-2">
           <KeyRound size={20} strokeWidth={1.75} className="text-link" />
           <h1 className="font-serif text-xl font-semibold">修改密码</h1>

@@ -227,16 +227,16 @@ function LeaveForm() {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label>开始日期</Label>
-            <DateField value={startDate} onChange={setStartDate} />
+            <DateField value={startDate} onChange={setStartDate} monthDay />
           </div>
           <div className="space-y-1.5">
             <Label>结束日期</Label>
-            <DateField value={endDate} onChange={setEndDate} />
+            <DateField value={endDate} onChange={setEndDate} monthDay />
           </div>
         </div>
         <div className="space-y-1.5">
           <Label>预计返校日（可选）</Label>
-          <DateField value={returnDate} onChange={setReturnDate} placeholder="可不填" />
+          <DateField value={returnDate} onChange={setReturnDate} monthDay placeholder="可不填" />
         </div>
         <div className="space-y-1.5">
           <Label>事由</Label>

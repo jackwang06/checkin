@@ -9,10 +9,9 @@ type ToasterProps = React.ComponentProps<typeof Sonner>
 // Background/text/border use this project's tokens (bg-bg / text-text /
 // border-border), not shadcn's bg-background / text-foreground, so the surface
 // matches the rest of Feiyue (cream-paper, not stark white/black).
-// `--width: 180px` ≈ half sonner's default (356px) — short copy like
-// "登录成功" fits without wrap; longer error text wraps to a 2nd line,
-// which is acceptable and still narrower than the old full-width chip.
-const TOASTER_STYLE = { "--width": "180px" } as React.CSSProperties
+// 宽度随内容自适应（w-auto/fit-content），居中，上限 90vw：短文案如
+// "已设置：1111 行改为节假日" 单行显示，超长文案才在 90vw 处换行。
+const TOASTER_STYLE = { "--width": "fit-content" } as React.CSSProperties
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
@@ -23,7 +22,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast group-[.toaster]:bg-bg group-[.toaster]:text-text group-[.toaster]:border-border group-[.toaster]:shadow-card",
+            "group toast !w-auto max-w-[90vw] mx-auto justify-center text-center group-[.toaster]:bg-bg group-[.toaster]:text-text group-[.toaster]:border-border group-[.toaster]:shadow-card",
           description: "group-[.toast]:text-text-muted",
           actionButton:
             "group-[.toast]:bg-text group-[.toast]:text-bg",

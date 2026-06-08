@@ -11,12 +11,15 @@ export function DateField({
   placeholder = '选择日期',
   className,
   id,
+  monthDay,
 }: {
   value: string
   onChange: (iso: string) => void
   placeholder?: string
   className?: string
   id?: string
+  /** 仅显示「M月D日」（省略年份，省空间）；值仍是完整 ISO。 */
+  monthDay?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const sel = parseISO(value)
@@ -26,7 +29,9 @@ export function DateField({
   })
 
   const display = sel
-    ? `${sel.getFullYear()}年${pad(sel.getMonth() + 1)}月${pad(sel.getDate())}日`
+    ? monthDay
+      ? `${sel.getMonth() + 1}月${sel.getDate()}日`
+      : `${sel.getFullYear()}年${pad(sel.getMonth() + 1)}月${pad(sel.getDate())}日`
     : ''
 
   return (
