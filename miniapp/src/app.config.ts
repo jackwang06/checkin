@@ -23,9 +23,12 @@ export default defineAppConfig({
     backgroundColor: '#ffffff',
     borderStyle: 'white',
     list: [
-      { pagePath: 'pages/me/index', text: '我的考勤' },
-      { pagePath: 'pages/leave/list', text: '假条' },
-      { pagePath: 'pages/profile/index', text: '我的' },
+      { pagePath: 'pages/me/index', text: '我的考勤',
+        iconPath: 'assets/tabbar/attendance.png', selectedIconPath: 'assets/tabbar/attendance-active.png' },
+      { pagePath: 'pages/leave/list', text: '假条',
+        iconPath: 'assets/tabbar/leave.png', selectedIconPath: 'assets/tabbar/leave-active.png' },
+      { pagePath: 'pages/profile/index', text: '我的',
+        iconPath: 'assets/tabbar/me.png', selectedIconPath: 'assets/tabbar/me-active.png' },
     ],
   },
 })

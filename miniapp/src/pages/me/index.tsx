@@ -33,6 +33,9 @@ export default function MeAttendance() {
   usePullDownRefresh(async () => { await load(); Taro.stopPullDownRefresh() })
 
   const cols = visibleDayCols(grid)
+  // 最新周置顶（后端按周次升序返回）
+  const orderedGrid = [...grid].sort((a, b) =>
+    a.term === b.term ? b.weekNo - a.weekNo : (a.term < b.term ? 1 : -1))
 
   return (
     <View>
@@ -55,7 +58,7 @@ export default function MeAttendance() {
             <Text className='gcell gweek faint'>周次</Text>
             {cols.map((c) => <Text key={c.key} className='gcell faint'>{c.label}</Text>)}
           </View>
-          {grid.map((row) => (
+          {orderedGrid.map((row) => (
             <View key={`${row.term}-${row.weekNo}`} className='grid-row'>
               <Text className='gcell gweek muted'>{row.weekNo}周</Text>
               {cols.map((c) => (

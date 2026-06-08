@@ -81,7 +81,7 @@ export default function AdminStudent() {
                   <Text className='faint' style={{ flex: '0 0 90rpx', fontSize: '24rpx' }}>周次</Text>
                   {cols.map((c) => <Text key={c.key} className='faint' style={{ flex: 1, textAlign: 'center', fontSize: '24rpx' }}>{c.label}</Text>)}
                 </View>
-                {report.grid.map((row) => (
+                {[...report.grid].sort((a, b) => a.term === b.term ? b.weekNo - a.weekNo : (a.term < b.term ? 1 : -1)).map((row) => (
                   <View key={`${row.term}-${row.weekNo}`} className='row' style={{ padding: '12rpx 0', borderBottom: '1px solid var(--border)' }}>
                     <Text className='muted' style={{ flex: '0 0 90rpx', fontSize: '24rpx' }}>{row.weekNo}周</Text>
                     {cols.map((c) => (
