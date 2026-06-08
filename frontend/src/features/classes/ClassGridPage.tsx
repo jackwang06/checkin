@@ -309,7 +309,7 @@ function CellButton({
         </div>
         <div className="space-y-1">
           <Label className="text-xs">返校日期</Label>
-          <Input type="date" value={returnDate}
+          <Input type="date" lang="zh-CN" value={returnDate}
                  onChange={(e) => setReturnDate(e.target.value)} className="h-8 text-xs" />
         </div>
         {cell?.status && cell.status !== '无异常' && (

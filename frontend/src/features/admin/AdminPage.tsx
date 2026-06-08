@@ -85,7 +85,7 @@ function WeeksTab() {
             </div>
             <div className="space-y-1.5">
               <Label>周一日期</Label>
-              <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+              <Input type="date" lang="zh-CN" value={start} onChange={(e) => setStart(e.target.value)} />
             </div>
           </div>
           <Button disabled={!weekNo || !start || create.isPending}
@@ -168,7 +168,7 @@ function SpecialDatesTab() {
           </div>
           <div className="space-y-1.5">
             <Label>日期</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input type="date" lang="zh-CN" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <Label>备注</Label>
