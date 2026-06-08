@@ -18,6 +18,16 @@ class ChangePasswordIn(CamelModel):
     new_password: str
 
 
+class WxLoginIn(CamelModel):
+    code: str
+
+
+class WxBindIn(CamelModel):
+    code: str
+    id: str
+    password: str
+
+
 class WeekIn(CamelModel):
     term: str
     week_no: int

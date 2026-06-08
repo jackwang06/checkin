@@ -264,12 +264,16 @@ CREATE TABLE IF NOT EXISTS users (
     student_id    TEXT REFERENCES student (id),   -- 学生账号指向本人；纯管理员为 NULL
     must_change_password INTEGER NOT NULL DEFAULT 0
                   CHECK (must_change_password IN (0, 1)),
+    wx_openid     TEXT,                           -- 微信小程序绑定（一个 openid 一个账号）
     created_at    TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
     last_login_at TEXT
 ) STRICT;
 -- 一个学生最多一个账号
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_student ON users (student_id)
     WHERE student_id IS NOT NULL;
+-- 一个微信 openid 最多绑定一个账号
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_openid ON users (wx_openid)
+    WHERE wx_openid IS NOT NULL;
 
 -- 登录审计（含失败记录，应用层限速依据）
 CREATE TABLE IF NOT EXISTS login_event (

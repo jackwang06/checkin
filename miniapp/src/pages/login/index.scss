@@ -1,0 +1,8 @@
+.login {
+  min-height: 100vh;
+  .brand {
+    padding: 120rpx 48rpx 40rpx;
+    .brand-title { font-size: 56rpx; font-weight: 700; display: block; }
+    .brand-sub { color: var(--fg-muted); font-size: 28rpx; margin-top: 12rpx; display: block; }
+  }
+}

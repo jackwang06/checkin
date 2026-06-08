@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .db import connect
 from .routes import (admins, attendance, audit_log, auth, classes, export,
                      grades, leaves, me, roster, special_dates, stats,
-                     students, transfers, users, weeks)
+                     students, transfers, users, weeks, wx)
 from .services.security import hash_password
 from .settings import settings
 
@@ -57,7 +57,7 @@ app.add_middleware(
 api = FastAPI(title="checkin-api")
 for r in (auth, me, weeks, stats, classes, attendance, students, leaves,
           export, transfers, grades, roster, admins, audit_log,
-          special_dates, users):
+          special_dates, users, wx):
     api.include_router(r.router)
 
 

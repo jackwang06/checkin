@@ -1,0 +1,59 @@
+/* Notion 风格全局变量与基础样式 */
+page {
+  --bg: #ffffff;
+  --bg-subtle: #f7f6f3;
+  --fg: #37352f;
+  --fg-muted: #787774;
+  --fg-faint: #9b9a97;
+  --border: #edece9;
+  --link: #2383e2;
+  background: var(--bg-subtle);
+  color: var(--fg);
+  font-size: 28rpx;
+  font-family: -apple-system, "PingFang SC", sans-serif;
+}
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16rpx;
+  padding: 28rpx;
+  margin: 24rpx;
+}
+.row { display: flex; align-items: center; }
+.muted { color: var(--fg-muted); }
+.faint { color: var(--fg-faint); }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10rpx;
+  padding: 4rpx 14rpx;
+  font-size: 24rpx;
+}
+.btn {
+  background: var(--fg);
+  color: var(--bg);
+  border-radius: 12rpx;
+  text-align: center;
+  padding: 22rpx;
+  font-size: 30rpx;
+}
+.btn[disabled] { opacity: 0.5; }
+.btn-outline {
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 12rpx;
+  text-align: center;
+  padding: 18rpx;
+}
+.input {
+  border: 1px solid var(--border);
+  border-radius: 12rpx;
+  padding: 18rpx 22rpx;
+  background: var(--bg);
+  font-size: 28rpx;
+}
+.label { font-size: 26rpx; color: var(--fg-muted); margin-bottom: 10rpx; display: block; }
+.h1 { font-size: 38rpx; font-weight: 600; }
+.h2 { font-size: 32rpx; font-weight: 600; }

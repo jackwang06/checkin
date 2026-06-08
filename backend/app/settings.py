@@ -35,6 +35,9 @@ class Settings:
     superadmin_id = os.environ.get("SUPERADMIN_ID", "")
     superadmin_password = os.environ.get("SUPERADMIN_PASSWORD", "")
     max_upload_mb = int(os.environ.get("MAX_UPLOAD_MB", "10"))
+    # 微信小程序
+    wx_appid = os.environ.get("WX_APPID", "")
+    wx_secret = os.environ.get("WX_SECRET", "")
 
 
 settings = Settings()

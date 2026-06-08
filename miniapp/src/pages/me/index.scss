@@ -1,0 +1,17 @@
+.grid-head, .grid-row {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  padding: 14rpx 0;
+}
+.grid-head { padding-bottom: 10rpx; }
+.grid-row:last-child { border-bottom: none; }
+.gcell {
+  flex: 1;
+  text-align: center;
+  font-size: 24rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.gweek { flex: 0 0 90rpx; text-align: left; justify-content: flex-start; }

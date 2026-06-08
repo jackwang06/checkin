@@ -17,9 +17,21 @@ STATUS_SEED = [
 ]
 
 
+def migrate(conn) -> list[str]:
+    """旧库增量迁移：CREATE TABLE IF NOT EXISTS 不会给已存在的表加新列，需显式 ALTER。"""
+    done = []
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(users)")}
+    if cols and "wx_openid" not in cols:
+        with conn:
+            conn.execute("ALTER TABLE users ADD COLUMN wx_openid TEXT")
+        done.append("users.wx_openid")
+    return done
+
+
 def main() -> None:
     conn = connect()
     try:
+        migrated = migrate(conn)              # 先迁移旧表，再跑 schema（建新表/索引/视图）
         conn.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
         with conn:
             conn.executemany(
@@ -40,6 +52,8 @@ def main() -> None:
         n_status = conn.execute("SELECT COUNT(*) FROM status_def").fetchone()[0]
         fk_issues = conn.execute("PRAGMA foreign_key_check").fetchall()
         print(f"建表完成: {', '.join(tables)}")
+        if migrated:
+            print(f"迁移: {', '.join(migrated)}")
         print(f"status_def 种子: {n_status} 条")
         print(f"foreign_key_check: {'通过' if not fk_issues else fk_issues}")
     finally:
