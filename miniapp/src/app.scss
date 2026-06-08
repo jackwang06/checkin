@@ -57,3 +57,5 @@ page {
 .label { font-size: 26rpx; color: var(--fg-muted); margin-bottom: 10rpx; display: block; }
 .h1 { font-size: 38rpx; font-weight: 600; }
 .h2 { font-size: 32rpx; font-weight: 600; }
+/* tab 页底部留白：自定义 tabBar 是 fixed 覆盖层，避免最后内容被遮 */
+.tabbar-pad { padding-bottom: calc(150rpx + env(safe-area-inset-bottom)); }

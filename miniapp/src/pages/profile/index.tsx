@@ -33,7 +33,7 @@ export default function Profile() {
   }
 
   return (
-    <View>
+    <View className='tabbar-pad'>
       <View className='card'>
         <Text className='h1'>{user?.name}</Text>
         <Text className='muted' style={{ display: 'block', marginTop: '8rpx' }}>
@@ -44,7 +44,6 @@ export default function Profile() {
       {admin && (
         <View className='card'>
           <Text className='label'>管理</Text>
-          <Item title='点名（按日改状态）' onClick={() => go('/pages/admin/rollcall')} />
           <Item title='假条核查' onClick={() => go('/pages/admin/leaves')} />
           <Item title='出勤统计' onClick={() => go('/pages/admin/stats')} />
           <Item title='学生查询 / 重置密码' onClick={() => go('/pages/admin/student')} />

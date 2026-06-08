@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { View, Text, Picker } from '@tarojs/components'
+import { View, Text, Picker, Input } from '@tarojs/components'
 import Taro, { useLoad } from '@tarojs/taro'
 import { listClasses, listWeeks, classGrid, patchAttendance } from '@/api/endpoints'
 import type { ClassInfo, Week, ClassGrid, Status } from '@/api/types'
@@ -18,6 +18,7 @@ export default function Rollcall() {
   const [dateIdx, setDateIdx] = useState(0)
   const [rows, setRows] = useState<Row[]>([])
   const [loading, setLoading] = useState(false)
+  const [query, setQuery] = useState('')
 
   useLoad(() => {
     if (!guard()) return
@@ -58,8 +59,12 @@ export default function Rollcall() {
 
   const curDay = grid?.dates[dateIdx]
 
+  const shown = query.trim()
+    ? rows.filter((r) => r.name.includes(query.trim()) || r.studentId.includes(query.trim()))
+    : rows
+
   return (
-    <View>
+    <View className='tabbar-pad'>
       <View className='card'>
         <Text className='label'>班级</Text>
         <Picker mode='selector' range={classes.map((c) => c.fullName)} value={clsIdx}
@@ -93,8 +98,12 @@ export default function Rollcall() {
         <View className='card'><Text className='muted'>选择班级与周次后加载名单。</Text></View>
       ) : (
         <View>
-          <View className='card'><Text className='muted'>{grid.className} · {curDay?.label}（{curDay?.date}）· {rows.length} 人</Text></View>
-          {rows.map((r) => (
+          <View className='card'>
+            <Text className='muted'>{grid.className} · {curDay?.label}（{curDay?.date}）· {rows.length} 人</Text>
+            <Input className='input' style={{ marginTop: '16rpx' }} value={query}
+                   onInput={(e) => setQuery(e.detail.value)} placeholder='搜索姓名 / 学号' />
+          </View>
+          {shown.map((r) => (
             <View key={r.studentId} className='card'>
               <View className='row' style={{ justifyContent: 'space-between' }}>
                 <Text>{r.name}</Text>

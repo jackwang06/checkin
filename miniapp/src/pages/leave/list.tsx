@@ -53,7 +53,7 @@ export default function LeaveList() {
   }
 
   return (
-    <View>
+    <View className='tabbar-pad'>
       <View className='card row' style={{ justifyContent: 'space-between' }}>
         <Text className='h2'>我的假条</Text>
         <Button className='btn' style={{ width: 'auto', padding: '12rpx 28rpx', fontSize: '26rpx' }}

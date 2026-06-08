@@ -38,7 +38,7 @@ export default function MeAttendance() {
     a.term === b.term ? b.weekNo - a.weekNo : (a.term < b.term ? 1 : -1))
 
   return (
-    <View>
+    <View className='tabbar-pad'>
       <View className='card'>
         <Text className='h2'>我的考勤</Text>
         <Text className='muted' style={{ display: 'block', marginTop: '6rpx' }}>
