@@ -1,4 +1,6 @@
 export default defineAppConfig({
+  // 按需注入/用时注入：仅注入当前页面用到的组件，提升启动性能（过代码质量「组件」项）
+  lazyCodeLoading: 'requiredComponents',
   pages: [
     'pages/me/index',
     'pages/leave/list',
