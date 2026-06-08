@@ -9,11 +9,11 @@ type ToasterProps = React.ComponentProps<typeof Sonner>
 // Background/text/border use this project's tokens (bg-bg / text-text /
 // border-border), not shadcn's bg-background / text-foreground, so the surface
 // matches the rest of Feiyue (cream-paper, not stark white/black).
-// --width 必须是固定 px/rem：sonner 用它做居中定位的 calc，设成 max-content/fit-content
-// 会破坏居中（偏移/竖条）。气泡也不能用 w-max（sonner 的 li 是绝对定位，mx-auto 不生效，会偏左）。
-// 方案：容器固定 26rem 全宽气泡（sonner 正确居中）+ 文字居中。短文案（账号或密码错误 /
-// 已设置：1111 行改为节假日）单行居中显示，超长文案在 26rem 处自然换行。
-const TOASTER_STYLE = { "--width": "26rem" } as React.CSSProperties
+// sonner 结构：ol 容器宽=var(--width) 居中；li 气泡 position:absolute、left:0、width=var(--width)
+// 填满容器。要"贴合内容+居中"：①容器设 90vw（合法长度，居中 calc 仍生效，不能用 max/fit-content
+// 否则 calc 失效偏移/竖条）；②li 用 w-max 贴合内容，再 left-0 right-0 mx-auto 在容器内绝对居中，
+// max-w-full 封顶 90vw。短文案两侧无多余留白，超长文案才换行。
+const TOASTER_STYLE = { "--width": "90vw" } as React.CSSProperties
 
 const Toaster = ({ ...props }: ToasterProps) => {
   return (
@@ -24,7 +24,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast:
-            "group toast justify-center text-center group-[.toaster]:bg-bg group-[.toaster]:text-text group-[.toaster]:border-border group-[.toaster]:shadow-card",
+            "group toast !w-max !max-w-full !left-0 !right-0 !mx-auto justify-center text-center group-[.toaster]:bg-bg group-[.toaster]:text-text group-[.toaster]:border-border group-[.toaster]:shadow-card",
           description: "group-[.toast]:text-text-muted",
           actionButton:
             "group-[.toast]:bg-text group-[.toast]:text-bg",
